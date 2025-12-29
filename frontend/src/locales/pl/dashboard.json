@@ -1,0 +1,9 @@
+{
+  "menu_title": "Panel",
+  "page_title": "Home",
+  "title": "Panel",
+  "stats_1_title": "Statystyka 1",
+  "stats_2_title": "Statystyka 2",
+  "panel_title": "Panel",
+  "backend_response": "Odpowiedż backendu: <strong>{{message}}</strong>"
+}

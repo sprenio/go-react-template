@@ -1,0 +1,13 @@
+{
+  "page_title": "Password reset",
+  "subtitle": "Enter your email, and we’ll send you a link to change your password.",
+  "back_to_login": "Back to login",
+  "header": "Reset password",
+  "lbl_email": "Email address",
+  "ph_email": "enter email address",
+  "submit": "Reset password",
+  "pending": "Sending request...",
+  "success": "Password reset email has been sent",
+  "error_generic": "An error occurred while resetting your password.",
+  "error_unknown": "Unknown error."
+}

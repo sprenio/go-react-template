@@ -1,0 +1,227 @@
+/* ===== GLOBAL RESET ===== */
+html {
+    box-sizing: border-box;
+    font-size: 100%;
+}
+
+@media (max-width: 768px) {
+    html {
+        font-size: 90%;
+    }
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+/* ===== BODY ===== */
+body {
+    margin: 0;
+    font-family: var(--font-body), serif;
+    color: var(--text);
+    background-color: var(--bg);
+}
+
+/* ===== LINKS & BUTTONS ===== */
+a,
+button {
+    box-sizing: border-box;
+    font-family: var(--font-body), serif;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+/* ===== HEADINGS ===== */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading), serif;
+}
+
+/* ===== UTILITIES ===== */
+.flag {
+    margin-right: var(--space-xs);
+    border-radius: var(--radius-sm);
+}
+
+/* ===== FORM WRAPPER ===== */
+.form-wrapper {
+    @apply flex flex-col gap-[var(--space-md)] w-full bg-[var(--surface)] text-[length:var(--text-md)] text-[var(--text)] font-[var(--font-body)];
+}
+
+.form-wrapper label {
+    @apply text-[length:var(--text-sm)] text-[var(--text-secondary)];
+}
+
+.form-wrapper input[type='text'],
+.form-wrapper input[type='email'],
+.form-wrapper input[type='password'],
+.form-wrapper input[type='number'],
+.form-wrapper select {
+    @apply w-full p-[var(--space-sm)] border border-[var(--border)]
+    rounded-[var(--radius-sm)] bg-[var(--bg)] text-[var(--text)]
+    text-[length:var(--text-md)] transition-all duration-200;
+}
+
+.form-wrapper input[type='text']:focus,
+.form-wrapper input[type='email']:focus,
+.form-wrapper input[type='password']:focus,
+.form-wrapper input[type='number']:focus,
+.form-wrapper select:focus {
+    @apply outline-none border-[var(--primary)];
+    box-shadow: 0 0 0 2px var(--overlay);
+}
+
+.form-wrapper input[type='checkbox'] {
+    @apply w-[18px] h-[18px] mr-2 cursor-pointer accent-[var(--primary)]
+    border border-[var(--border)] rounded transition-all duration-200;
+}
+
+.form-wrapper input[type='checkbox']:hover {
+    @apply border-[var(--primary)] bg-[var(--surface-hover)];
+}
+
+.form-wrapper input[type='checkbox']:checked {
+    @apply bg-[var(--primary)] border-[var(--primary)];
+}
+
+.form-wrapper label.checkbox-label {
+    @apply flex
+    items-center
+    cursor-pointer
+    text-[length:var(--text-sm)]
+    text-[var(--text)]
+    py-[var(--space-xs)];
+}
+
+.form-wrapper button[type='submit'] {
+    @apply bg-[var(--primary)] text-[var(--text-on-primary)] p-[var(--space-sm)]
+    border-none rounded-[var(--radius-sm)] cursor-pointer font-medium
+    transition-colors duration-200 hover:bg-[var(--primary-hover)]
+    active:scale-95;
+}
+.form-wrapper input[type='radio'] {
+    @apply w-[18px] h-[18px] mr-2 cursor-pointer accent-[var(--primary)] border border-[var(--border)]
+    rounded-full transition-all duration-200 hover:border-[var(--primary)] hover:bg-[var(--surface-hover)];
+}
+.form-wrapper label.radio-label {
+    @apply flex items-center cursor-pointer text-[length:var(--text-sm)] text-[var(--text)] my-1;
+}
+
+.form-wrapper .helper-text {
+    @apply text-[length:var(--text-sm)] text-[var(--secondary)] mt-[var(--space-sm)];
+}
+
+.form-wrapper select {
+    @apply w-full px-[var(--space-sm)] py-[var(--space-sm)] border border-[var(--border)] rounded-[var(--radius-sm)] bg-[var(--surface)] text-[var(--text)] text-[length:var(--text-md)] cursor-pointer
+    appearance-none transition-[border-color,box-shadow] duration-200 focus:outline-none focus:border-[var(--primary)] focus:shadow-[0_0_0_2px_var(--overlay)];
+}
+.form-wrapper .select-wrapper {
+    @apply relative inline-block w-full;
+}
+.select-wrapper::after {
+    content: '▾';
+    @apply absolute top-1/2 right-[var(--space-sm)] -translate-y-1/2 pointer-events-none text-[var(--text-secondary)];
+}
+
+
+/* ===== FORM FOOTER ===== */
+.form-footer {
+    @apply mt-[var(--space-lg)] text-center;
+}
+.form-footer p {
+    margin: var(--space-xs) 0;
+    @apply text-[length:var(--text-sm)] text-[var(--secondary)]
+}
+.form-footer a {
+    @apply text-[var(--primary)] font-medium no-underline transition-colors duration-200 ease-in-out
+    hover:text-[var(--primary-hover)] hover:underline;
+}
+
+.top-menu .menu-link {
+    @apply bg-none border-none font-medium no-underline cursor-pointer
+    transition-colors duration-300 ease-in-out text-[var(--text)];
+}
+.top-menu .menu-link.desktop {
+    @apply text-[length:var(--text-md)];
+}
+
+.top-menu .menu-link:hover {
+    color: var(--primary);
+}
+.top-menu .menu-link.mobile {
+    @apply bg-transparent border-0 text-left px-6 py-4 text-[var(--text)] font-medium no-underline cursor-pointer transition-colors duration-200 hover:bg-[var(--surface-hover)];
+}
+
+.msg-type {
+    background-color:var(--info-bg);
+    color:var(--info-text);
+    @apply border border-[var(--info-border)];
+}
+.msg-type.type-success {
+    background-color:var(--success-bg);
+    border-color:var(--success-border);
+    color:var(--success-text);
+}
+.msg-type.type-error {
+    background-color:var(--error-bg);
+    border-color:var(--error-border);
+    color:var(--error-text);
+}
+.msg-type.type-warning {
+    background-color:var(--warning-bg);
+    border-color:var(--warning-border);
+    color:var(--warning-text);
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.fade-in {
+    animation: fade-in 0.3s ease-out;
+}
+
+/* ===== GRID ===== */
+.grid-sm-lg-wrapper {
+    @apply grid grid-cols-1 gap-[var(--space-sm)] items-start p-[var(--space-lg)] w-full m-0 md:grid-cols-[1fr_2fr];
+}
+.grid-sm-lg-wrapper .grid-column {
+    @apply flex flex-col gap-[var(--space-sm)] md:gap-[var(--space-lg)]
+}
+/* ===== SETTINGS ===== */
+.settings-sidebar {
+    height: fit-content;
+}
+.settings-sidebar nav ul {
+    @apply list-none p-0 m-0;
+}
+.settings-sidebar li + li {
+    @apply mt-[var(--space-md)];
+}
+.settings-sidebar button {
+    @apply w-full text-left px-[var(--space-md)] py-[var(--space-sm)] border-none bg-transparent text-[var(--text)] text-[length:var(--text-md)] rounded-[var(--radius-md)] cursor-pointer transition-all duration-200
+    hover:bg-[var(--surface-hover)];
+}
+.settings-sidebar button.active {
+    @apply bg-[var(--primary-soft)] text-[var(--text-on-primary-soft)] font-semibold;
+}
+.settings-content {
+    @apply transition-colors duration-300 ease-in-out;
+}
+.settings-content h2 {
+    @apply mb-[var(--space-md)] text-[length:var(--text-lg)] font-semibold;
+}

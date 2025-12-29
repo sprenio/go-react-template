@@ -1,0 +1,18 @@
+{
+  "page_title": "Anmelden",
+  "header": "Anmeldung",
+  "lbl_email": "E-Mail",
+  "ph_email": "E-Mail-Adresse",
+  "lbl_password": "Passwort",
+  "ph_password": "Passwort",
+  "submit": "Anmelden",
+  "success": "Erfolgreich angemeldet",
+  "invalid_credentials": "Ungültiger Benutzername oder Passwort",
+  "account_locked": "Konto ist gesperrt",
+  "generic_error": "Anmeldung fehlgeschlagen",
+  "no_account": "Noch kein Konto?",
+  "register": "Registrieren",
+  "forgot_password": "Passwort vergessen?",
+  "loader": "Anmeldung läuft...",
+  "remember_me": "Angemeldet bleiben"
+}

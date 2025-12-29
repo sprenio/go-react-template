@@ -1,0 +1,46 @@
+version: '3'
+
+vars:
+  TASK_TARGET: '{{if (env "TARGET")}}{{env "TARGET"}}{{else}}webserver{{end}}'
+tasks:
+  run:
+    desc: "Uruchom wybrany target (np. task run target=webserver)"
+    cmds:
+      - go run ./cmd/{{.TASK_TARGET}}/
+
+  watch:
+    desc: "Hot-reload wybranego targetu (Air)"
+    cmds:
+      #- air -c .air.toml -d ./cmd/{{.TASK_TARGET}}
+      - air -c .air.toml
+
+  test:
+    desc: "Uruchom wszystkie testy"
+    cmds:
+      - go test ./... -v
+
+  test:watch:
+    desc: "Uruchamiaj testy przy każdej zmianie (reflex)"
+    cmds:
+      - reflex -r '\.go$' -- sh -c 'go test ./... -v'
+
+  lint:
+    desc: "Uruchom formatowanie i linting kodu"
+    cmds:
+      - echo "Running go fmt..."
+      - go fmt ./...
+      - echo "Running go vet..."
+      - go vet ./...
+      - |
+        if command -v golint >/dev/null 2>&1; then
+          echo "Running golint..."
+          golint ./...
+        else
+          echo "golint not installed, skipping..."
+        fi
+
+  tidy:
+    desc: "Porządkuje moduły (go mod tidy)"
+    cmds:
+      - echo "Running go mod tidy..."
+      - go mod tidy

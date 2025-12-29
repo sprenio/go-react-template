@@ -1,0 +1,30 @@
+# 🔹 Oficjalny obraz Go
+FROM golang:1.24
+
+WORKDIR /app
+
+# 🔹 Instalacja curl, git i unzip (potrzebne do Task/Air)
+RUN apt-get update && apt-get install -y curl unzip git && rm -rf /var/lib/apt/lists/*
+
+# 🔹 Instalacja Task
+RUN curl -sSfL https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin
+
+# 🔹 Instalacja Air (hot reload dla Go)
+RUN curl -sSfL https://raw.githubusercontent.com/cosmtrek/air/master/install.sh | sh -s -- -b /usr/local/bin
+
+# 🔹 Kopiujemy moduły i instalujemy zależności
+COPY ./backend/go.mod ./backend/go.sum ./
+RUN go mod download
+
+# 🔹 Kopiujemy resztę kodu
+COPY ./backend/ .
+COPY ./docker/services/backend/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# 🔹 Port aplikacji
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# 🔹 Domyślny CMD: run targetu (webserver lub consumer)
+CMD ["task", "run"]

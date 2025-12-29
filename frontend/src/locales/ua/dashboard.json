@@ -1,0 +1,9 @@
+{
+  "menu_title": "Панель",
+  "page_title": "Головна",
+  "title": "Панель",
+  "stats_1_title": "Статистика 1",
+  "stats_2_title": "Статистика 2",
+  "panel_title": "Панель",
+  "backend_response": "Відповідь сервера: <strong>{{message}}</strong>"
+}

@@ -1,0 +1,9 @@
+{
+  "menu_title": "Dashboard",
+  "page_title": "Home",
+  "title": "Dashboard",
+  "stats_1_title": "Statistic 1",
+  "stats_2_title": "Statistic 2",
+  "panel_title": "Panel",
+  "backend_response": "Backend response: <strong>{{message}}</strong>"
+}

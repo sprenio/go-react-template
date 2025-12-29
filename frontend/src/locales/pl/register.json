@@ -1,0 +1,21 @@
+{
+  "page_title": "Rejestracja",
+  "title": "Załóż konto",
+  "subtitle": "Wypełnij formularz, aby zarejestrować się w systemie.",
+  "have_account": "Masz już konto?",
+  "login_link": "Zaloguj się",
+  "lbl_username": "Nazwa użytkownika",
+  "lbl_language": "Język",
+  "lbl_email": "Adres e-mail",
+  "lbl_password": "Hasło",
+  "lbl_confirm": "Powtórz hasło",
+  "password_hint": "Min. 6 znaków, zawiera literę, cyfrę i znak specjalny.",
+  "username_hint": "Min. 4 znaki.",
+  "submit": "Zarejestruj się",
+  "pending": "Wysyłanie prośby...",
+  "error_match": "Hasła nie są takie same.",
+  "error_weak": "Hasło musi mieć min. 6 znaków i zawierać literę, cyfrę oraz znak specjalny.",
+  "success": "Rejestracja zakończona sukcesem! Sprawdź swoją skrzynkę e-mail.",
+  "failed": "Błąd rejestracji",
+  "error_username_length": "Nazwa użytkownika musi mieć co najmniej {{count}} {{count, pluralPl(znak,znaki,znaków)}}."
+}

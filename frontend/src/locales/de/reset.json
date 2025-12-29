@@ -1,0 +1,13 @@
+{
+  "page_title": "Passwort zurücksetzen",
+  "subtitle": "Gib deine E-Mail ein, um einen Link zum Zurücksetzen zu erhalten.",
+  "back_to_login": "Zurück zur Anmeldung",
+  "header": "Passwort zurücksetzen",
+  "lbl_email": "E-Mail-Adresse",
+  "ph_email": "E-Mail-Adresse eingeben",
+  "submit": "Passwort zurücksetzen",
+  "pending": "Anfrage wird gesendet...",
+  "success": "E-Mail zum Zurücksetzen wurde gesendet",
+  "error_generic": "Beim Zurücksetzen des Passworts ist ein Fehler aufgetreten.",
+  "error_unknown": "Unbekannter Fehler."
+}

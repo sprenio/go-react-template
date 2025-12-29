@@ -1,0 +1,29 @@
+{
+  "global": {
+    "logout": "Abmelden",
+    "unknown_error": "Ein Fehler ist aufgetreten",
+    "logout_success": "Erfolgreich abgemeldet!",
+    "back_to_main_page": "Zurück zur Startseite"
+  },
+  "api": {
+    "error": {
+      "generic": "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten.",
+      "unknown": "Unbekannter Fehler."
+    }
+  },
+  "loader": {
+    "please_wait": "Bitte warten..."
+  },
+  "not-found": {
+    "page_title": "Seite nicht gefunden",
+    "message": "Ups! Diese Seite existiert nicht."
+  },
+  "apiCodes": {
+    "unknown_error": "Ein unbekannter Fehler ist aufgetreten.",
+    "general_success": "Vorgang erfolgreich abgeschlossen",
+    "generic": "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten.",
+    "1101": "Ein Benutzer mit diesem Namen oder dieser E-Mail existiert bereits.",
+    "1201": "Ungültiger Benutzername oder Passwort.",
+    "1400": "Einstellungen erfolgreich gespeichert"
+  }
+}

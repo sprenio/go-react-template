@@ -1,0 +1,48 @@
+:root {
+    /* 🧱 TYPOGRAFIA */
+    --font-heading: 'Poppins', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'Roboto Mono', monospace;
+
+    /* 📏 FONT SIZE */
+    --text-xs: 0.625rem;
+    --text-sm: 0.75rem;
+    --text-md: 0.875rem;
+    --text-lg: 1rem;
+    --text-xl: 1.25rem;
+    --text-xxl: 1.5rem;
+    --text-display: 2rem;
+
+    /* 🔤 FONT WEIGHT */
+    --font-light: 300;
+    --font-regular: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+
+    /* 📐 RADIUS */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-round: 9999px;
+
+    /* 📏 SPACING */
+    --space-xs: 0.5rem;
+    --space-sm: 0.75rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+
+    /* 🌫 SHADOW */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.1);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.08);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,.12);
+
+    /* ⚡ TRANSITION */
+    --transition-fast: 0.15s ease-in-out;
+    --transition-normal: 0.25s ease;
+
+    --icon-sun: #facc15;
+    --icon-mon: #6366f1;
+}

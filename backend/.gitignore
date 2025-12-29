@@ -1,0 +1,35 @@
+# === Go build ===
+/bin/
+/tmp/
+/dist/
+/*.exe
+/*.exe~
+/*.dll
+/*.so
+/*.dylib
+*.test
+*.out
+
+# === Go modules ===
+/vendor/
+
+# === IDE/editor junk ===
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+
+# === Logs & runtime ===
+*.log
+*.pid
+*.seed
+*.coverprofile
+
+# === Air tmp files ===
+.air.toml.local
+tmp/
+
+# === Taskfile ===
+.task/

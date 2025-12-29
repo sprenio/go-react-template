@@ -1,0 +1,18 @@
+{
+  "page_title": "Zaloguj się",
+  "header": "Zaloguj się",
+  "lbl_email": "Email",
+  "ph_email": "Adres e-mail",
+  "lbl_password": "Hasło",
+  "ph_password": "Hasło",
+  "submit": "Zaloguj",
+  "success": "Zalogowano pomyślnie",
+  "invalid_credentials": "Nieprawidłowy login lub hasło",
+  "account_locked": "Konto jest zablokowane",
+  "generic_error": "Nieudane logowanie",
+  "no_account": "Nie masz jeszcze konta?",
+  "register": "Zarejestruj się",
+  "forgot_password": "Nie pamiętasz hasła?",
+  "loader": "Logowanie...",
+  "remember_me": "Zapamiętaj mnie"
+}

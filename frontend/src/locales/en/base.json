@@ -1,0 +1,29 @@
+{
+  "global": {
+    "logout": "Log out",
+    "unknown_error": "An error occurred",
+    "logout_success": "Logged out successfully!",
+    "back_to_main_page": "Back to the main page"
+  },
+  "api": {
+    "error": {
+      "generic": "An error occurred while processing the request.",
+      "unknown": "Unknown error."
+    }
+  },
+  "loader": {
+    "please_wait": "Please wait..."
+  },
+  "not-found": {
+    "page_title": "Page not found",
+    "message": "Oops! It seems this page doesn’t exist."
+  },
+  "apiCodes": {
+    "unknown_error": "An unknown error occurred.",
+    "general_success": "Operation completed successfully",
+    "generic": "An error occurred while processing the request.",
+    "1101": "A user with this name or email already exists.",
+    "1201": "Invalid username or password.",
+    "1400": "Settings saved successfully"
+  }
+}

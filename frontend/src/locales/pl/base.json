@@ -1,0 +1,29 @@
+{
+  "global": {
+    "logout": "Wyloguj",
+    "unknown_error": "Wystąpił błąd",
+    "logout_success": "Wylogowano pomyślnie!",
+    "back_to_main_page": "Wróć do strony głównej"
+  },
+  "api": {
+    "error": {
+      "generic": "Wystąpił błąd podczas przetwarzania żądania.",
+      "unknown": "Nieznany błąd."
+    }
+  },
+  "loader": {
+    "please_wait": "Proszę czekać..."
+  },
+  "not-found": {
+    "page_title": "Strona nie znaleziona",
+    "message": "Ups! Wygląda na to, że tej strony nie ma."
+  },
+  "apiCodes": {
+    "unknown_error": "Wystąpił nieznany błąd.",
+    "general_success": "Operacja zakończona sukcesem",
+    "generic": "Wystąpił błąd podczas przetwarzania żądania.",
+    "1101": "Użytkownik o tej nazwie lub z tym adresem email już istnieje.",
+    "1201": "Nieprawidłowy login lub hasło.",
+    "1400": "Ustawienia zostały pomyślnie zapisane"
+  }
+}

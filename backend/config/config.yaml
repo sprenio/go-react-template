@@ -1,0 +1,25 @@
+web_server:
+  host: ""
+
+app_name: "MyWebApp"
+log_level: "info"
+default_language: "pl"
+
+frontend:
+  base_url: "http://localhost:5173"
+  confirmation_endpoint: "/confirm_token/{token}"
+  features:
+    show_register_link: true
+    show_reset_password_link: true
+
+register:
+  enabled: true
+  expiration_days: 1
+
+reset_password:
+  enabled: true
+  expiration_days: 1
+
+email_change:
+  expiration_days: 1
+

@@ -1,0 +1,13 @@
+{
+  "page_title": "Resetowanie hasła",
+  "subtitle": "Podaj swój e-mail, a prześlemy Ci link do zmiany hasła.",
+  "back_to_login": "Wróć do logowania",
+  "header": "Resetuj hasło",
+  "lbl_email": "Adres e-mail",
+  "ph_email": "wpisz adres e-mail",
+  "submit": "Resetuj hasło",
+  "pending": "Wysyłanie prośby...",
+  "success": "Email resetujący został wysłany",
+  "error_generic": "Wystąpił błąd podczas resetowania hasła.",
+  "error_unknown": "Nieznany błąd."
+}

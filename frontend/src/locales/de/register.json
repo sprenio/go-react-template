@@ -1,0 +1,20 @@
+{
+  "page_title": "Registrierung",
+  "title": "Konto erstellen",
+  "subtitle": "Fülle das Formular aus, um dich zu registrieren.",
+  "have_account": "Bereits ein Konto?",
+  "login_link": "Anmelden",
+  "lbl_username": "Benutzername",
+  "lbl_language": "Sprache",
+  "lbl_email": "E-Mail-Adresse",
+  "lbl_password": "Passwort",
+  "lbl_confirm": "Passwort wiederholen",
+  "password_hint": "Mindestens 6 Zeichen, einschließlich Buchstabe, Zahl und Sonderzeichen.",
+  "username_hint": "Mindestens 4 Zeichen.",
+  "submit": "Registrieren",
+  "error_match": "Passwörter stimmen nicht überein.",
+  "error_weak": "Das Passwort muss mindestens 6 Zeichen lang sein und einen Buchstaben, eine Zahl und ein Sonderzeichen enthalten.",
+  "success": "Registrierung erfolgreich! Überprüfe dein E-Mail-Postfach.",
+  "failed": "Registrierung fehlgeschlagen",
+  "error_username_length": "Der Benutzername muss mindestens {{count}} {{count, pluralPl(Zeichen,Zeichen,Zeichen)}} haben."
+}

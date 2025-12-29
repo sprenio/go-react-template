@@ -1,0 +1,20 @@
+{
+  "page_title": "Registration",
+  "title": "Create an account",
+  "subtitle": "Fill in the form to register in the system.",
+  "have_account": "Already have an account?",
+  "login_link": "Log in",
+  "lbl_username": "Username",
+  "lbl_language": "Language",
+  "lbl_email": "Email address",
+  "lbl_password": "Password",
+  "lbl_confirm": "Repeat password",
+  "password_hint": "Min. 6 characters, must include a letter, a number, and a special character.",
+  "username_hint": "Min. 4 characters.",
+  "submit": "Register",
+  "error_match": "Passwords do not match.",
+  "error_weak": "Password must be at least 6 characters long and include a letter, number, and special character.",
+  "success": "Registration completed successfully! Check your email inbox.",
+  "failed": "Registration failed",
+  "error_username_length": "Username must have at least {{count}} {{count, pluralPl(character,characters,characters)}}."
+}

@@ -1,0 +1,4 @@
+ALTER TABLE `confirmation_tokens`
+    ADD `status` ENUM ('NEW','PROCESSING','CONSUMED','FAILED','EXPIRED','CANCELED') NOT NULL DEFAULT 'NEW' AFTER `payload`,
+    ADD `user_id` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `token`,
+    CHANGE `consumed_at` `status_changed_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;

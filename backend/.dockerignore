@@ -1,0 +1,31 @@
+# === Git ===
+.git
+.gitignore
+
+# === Build artifacts ===
+bin/
+tmp/
+dist/
+*.exe
+*.test
+*.out
+
+# === Go modules ===
+vendor/
+
+# === IDE/editor junk ===
+.vscode/
+.idea/
+*.iml
+*.swp
+*~
+
+# === Logs & runtime ===
+*.log
+*.pid
+*.seed
+*.coverprofile
+
+# === Task / Air local files ===
+.task/
+.air.toml.local

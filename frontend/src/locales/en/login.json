@@ -1,0 +1,18 @@
+{
+  "page_title": "Log in",
+  "header": "Sign in",
+  "lbl_email": "Email",
+  "ph_email": "Email address",
+  "lbl_password": "Password",
+  "ph_password": "Password",
+  "submit": "Log in",
+  "success": "Logged in successfully",
+  "invalid_credentials": "Invalid username or password",
+  "account_locked": "Account is locked",
+  "generic_error": "Login failed",
+  "no_account": "Don't have an account yet?",
+  "register": "Register",
+  "forgot_password": "Forgot your password?",
+  "loader": "Logging in...",
+  "remember_me": "Remember me"
+}

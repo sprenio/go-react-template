@@ -1,0 +1,140 @@
+name: "headless-app"
+
+services:
+  headless-db:
+    container_name: headless-db
+    image: mariadb:11.8.2-ubi
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-myapp}
+      MYSQL_USER: ${MYSQL_USER:-myapp}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-myapp}
+    working_dir: /var/lib/mysql/
+    volumes:
+      - ${MYSQL_DATA_DIR:-./services/db/data}:/var/lib/mysql
+      - ${MYSQL_LOGS_DIR:-./services/db/logs}:/var/log/mysql
+      - ./services/db/initdb.d:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "mariadb -h localhost -u $${MYSQL_USER} -p$${MYSQL_PASSWORD} -e \"USE $${MYSQL_DATABASE};\"" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    networks:
+      - reverse-proxy
+
+  headless-db-migrator:
+    container_name: headless-db-migrator
+    build:
+      context: ..
+      dockerfile: ./docker/services/db-migrator/Dockerfile
+    environment:
+      MYSQL_HOST: headless-db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-myapp}
+    depends_on:
+      headless-db:
+        condition: service_healthy
+    volumes:
+      - ../db_migrations:/migrator/migrations:ro
+    networks:
+      - reverse-proxy
+    #command: ["tail", "-f", "/dev/null"]
+
+  headless-webserver:
+    container_name: headless-webserver
+    build:
+      context: ..
+      dockerfile: ./docker/services/backend/Dockerfile
+      args:
+        TARGET: webserver
+    env_file:
+      - ./env/.env.backend
+      - ./env/.env.backend.local
+    environment:
+      APP_NAME: ${APP_NAME:-MyWebApp}
+      DB_HOST: headless-db
+      DB_USER: ${MYSQL_USER:-myapp}
+      DB_PASS: ${MYSQL_PASSWORD:-myapp}
+      DB_NAME: ${MYSQL_DATABASE:-myapp}
+      WEBSERVER_PORT: ${WEBSERVER_PORT:-8080}
+      RABBITMQ_HOST: headless-rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD:-guest}
+      TARGET: ${WEBSERVER_TARGET:-webserver}
+    volumes:
+      - ./services/backend/entrypoint.d/webservice:/entrypoint.d:ro
+    depends_on:
+      headless-db-migrator:
+        condition: service_completed_successfully
+      headless-db:
+        condition: service_healthy
+    restart: always
+    networks:
+      - reverse-proxy
+
+  headless-consumer:
+    container_name: headless-consumer
+    build:
+      context: ..
+      dockerfile: ./docker/services/backend/Dockerfile
+      args:
+        TARGET: consumer
+    env_file:
+      - ./env/.env.backend
+      - ./env/.env.backend.local
+    environment:
+      APP_NAME: ${APP_NAME:-MyWebApp}
+      DB_HOST: headless-db
+      DB_USER: ${MYSQL_USER:-myapp}
+      DB_PASS: ${MYSQL_PASSWORD:-myapp}
+      DB_NAME: ${MYSQL_DATABASE:-myapp}
+      RABBITMQ_HOST: headless-rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD:-guest}
+      TARGET: ${CONSUMER_TARGET:-consumer}
+    depends_on:
+      headless-db-migrator:
+        condition: service_completed_successfully
+      headless-db:
+        condition: service_healthy
+    restart: always
+    networks:
+      - reverse-proxy
+
+  headless-frontend:
+    container_name: headless-frontend
+    build:
+      context: ..
+      dockerfile: ./docker/services/frontend/Dockerfile
+      args:
+        APP_NAME: ${APP_NAME:-MyWebApp}
+    env_file:
+      - ./env/.env.frontend
+      - ./env/.env.frontend.local
+    volumes:
+      - app_share_volume:/app_share
+    command: >
+      sh -c "cp -r /app/dist /app_share/${APP_DEPLOY_DIR:-my_awesome_app} && echo 'Build copied to shared volume'"
+    networks:
+      - reverse-proxy
+
+  headless-rabbitmq:
+    container_name: headless-rabbitmq
+    image: rabbitmq:4.1.2-management
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-myapp}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-myapp}
+    working_dir: /var/lib/rabbitmq
+    volumes:
+      - ${RABBITMQ_DATA_DIR:-./services/rabbitmq/data}:/var/lib/rabbitmq
+      - ${RABBITMQ_LOGS_DIR:-./services/rabbitmq/logs}:/var/log/rabbitmq
+    networks:
+      - reverse-proxy
+volumes:
+  app_share_volume:
+    external: true
+networks:
+  reverse-proxy:
+    external: true

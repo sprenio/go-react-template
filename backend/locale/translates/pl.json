@@ -1,0 +1,113 @@
+[
+  {
+    "id": "general.hello_user",
+    "translation": "Witaj, {{.UserName}}!"
+  },
+  {
+    "id": "general.if_button_fails",
+    "translation": "Jeśli przycisk nie działa, skopiuj i wklej poniższy link w przeglądarkę:"
+  },
+  {
+    "id": "general.best_regards",
+    "translation": "Pozdrawiamy,<br/>Zespół {{ .AppName }}"
+  },
+  {
+    "id": "welcome.thank_you_and_click",
+    "translation": "Dziękujemy za rejestrację w {{ .AppName }}.<br/>Aby aktywować swoje konto, kliknij w poniższy przycisk:"
+  },
+  {
+    "id": "welcome.confirm_email",
+    "translation": "Potwierdź adres e-mail"
+  },
+  {
+    "id": "welcome.link_expiry_info",
+    "one": "Ten link będzie aktywny przez najbliższy dzień.<br/>Po tym czasie konto zostanie automatycznie usunięte.",
+    "other": "Ten link będzie aktywny przez najbliższe <strong>{{ .ExpiryDays }}</strong> dni.<br/>Po tym czasie konto zostanie automatycznie usunięte."
+  },
+  {
+    "id": "welcome.if_not_you",
+    "translation": "Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość lub skontaktuj się z nami."
+  },
+  {
+    "id": "welcome.subject",
+    "translation": "Potwierdź swoje konto w {{ .AppName }}"
+  },
+  {
+    "id": "welcome.page_title",
+    "translation": "Potwierdź konto"
+  },
+  {
+    "id": "welcome.page_header",
+    "translation": "Witamy w {{ .AppName }}!"
+  },
+  {
+    "id": "email_change.you_requested_email_change",
+    "translation": "Otrzymaliśmy prośbę o zmianę adresu e-mail przypisanego do Twojego konta."
+  },
+  {
+    "id": "email_change.please_confirm_new_email",
+    "translation": "Aby potwierdzić nowy adres, kliknij poniższy przycisk:"
+  },
+  {
+    "id": "email_change.confirm_new_email",
+    "translation": "Potwierdź nowy adres e-mail"
+  },
+  {
+    "id": "email_change.link_expiry_info",
+    "one": "Ten link będzie aktywny przez najbliższy dzień.",
+    "other": "Ten link będzie aktywny przez najbliższe <strong>{{ .ExpiryDays }}</strong> dni."
+  },
+  {
+    "id": "email_change.if_not_you_email_change",
+    "translation": "Jeśli to nie Ty inicjowałeś zmianę adresu, zignoruj tę wiadomość. Twój adres nie zostanie zmieniony."
+  },
+  {
+    "id": "email_change.subject",
+    "translation": "Potwierdź swój adres e-mail w {{ .AppName }}"
+  },
+  {
+    "id": "email_change.page_title",
+    "translation": "Potwierdź adres e-mail"
+  },
+  {
+    "id": "email_change.page_header",
+    "translation": "Potwierdź adres e-mail w {{ .AppName }}!"
+  },
+  {
+    "id": "password_reset.hello",
+    "translation": "Witaj, {{ .UserName }}!"
+  },
+  {
+    "id": "password_reset.you_requested",
+    "translation": "Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta."
+  },
+  {
+    "id": "password_reset.please_reset",
+    "translation": "Aby zresetować hasło, kliknij poniższy przycisk:"
+  },
+  {
+    "id": "password_reset.reset_password",
+    "translation": "Zresetuj hasło"
+  },
+  {
+    "id": "password_reset.link_expiry_info",
+    "one": "Ten link będzie aktywny przez najbliższy dzień.",
+    "other": "Ten link będzie aktywny przez najbliższe <strong>{{ .ExpiryDays }}</strong> dni."
+  },
+  {
+    "id": "password_reset.if_not_you",
+    "translation": "Jeśli to nie Ty inicjowałeś resetowanie hasła, zignoruj tę wiadomość. Twoje hasło pozostanie bez zmian."
+  },
+  {
+    "id": "password_reset.subject",
+    "translation": "Zresetuj swoje hasło w {{ .AppName }}"
+  },
+  {
+    "id": "password_reset.page_title",
+    "translation": "Zresetuj hasło"
+  },
+  {
+    "id": "password_reset.page_header",
+    "translation": "Zresetuj hasło w {{ .AppName }}!"
+  }
+]
