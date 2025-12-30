@@ -17,6 +17,11 @@ export default defineConfig(({mode}) => {
             port: Number(env.VITE_PORT) || 5173,
         },
         envDir: envPath,
+        test: {
+            globals: true,
+            environment: 'jsdom',
+            setupFiles: './src/test/setup.ts',
+        },
         resolve: {
             alias: {
                 '@': path.resolve(__dirname, './src'),

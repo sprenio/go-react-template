@@ -1,2 +1,2 @@
 export { ConfigProvider}  from './Provider';
-export { useConfig } from './Context';
+export { ConfigContext, useConfig } from './Context';

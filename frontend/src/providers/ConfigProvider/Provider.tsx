@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api , toastError, ApiError } from '@/api';
 import {ConfigContext} from './Context';
-import type {ConfigType} from './types'
+import type {ConfigType} from '@/types'
 
 export function ConfigProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
