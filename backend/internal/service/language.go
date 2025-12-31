@@ -18,8 +18,11 @@ func NewLanguageService(repo *repository.LanguageRepository) *LanguageService {
 
 func (s *LanguageService) GetLanguages(ctx context.Context) ([]models.Language, error) {
 	languages, err := s.repo.Get(ctx)
-	if err != nil || len(languages) == 0 {
+	if err != nil {
 		return []models.Language{}, errors.Wrap(err, "languages not found")
+	}
+	if len(languages) == 0 {
+		return []models.Language{}, errors.New("languages not found")
 	}
 	return languages, nil
 }
