@@ -9,9 +9,12 @@ type LanguageSelectProps = {
     flagsOnly?:boolean
 }
 export default function LanguageSelect({ value = '', onChange, flagsOnly = false }: LanguageSelectProps) {
+    const { config, showLanguages } = useConfig();
+    if (!showLanguages) {
+        return (<></>);
+    }
     const { lang: defaultLang } = useLang();
     value = value || defaultLang;
-    const { config } = useConfig();
     const languages = config.Languages || [];
     const current = languages.find((lang:LangType) => lang.code === value) || languages[0];
     const [selected, setSelected] = useState(current);

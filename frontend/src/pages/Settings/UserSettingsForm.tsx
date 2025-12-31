@@ -4,6 +4,7 @@ import {useTranslation} from 'react-i18next';
 import React, {useReducer} from 'react';
 import type {UserType, UserSettingsType} from '@/types';
 import {defUserSettings} from './defaults';
+import { useConfig } from '@/providers/ConfigProvider';
 
 const reducerActions = {
     SET_LANGUAGE: 'SET_LANGUAGE',
@@ -72,9 +73,10 @@ export default function UserSettingsForm({userSettings, user, onSubmit}: UserSet
         });
     };
 
+    const { showLanguages } = useConfig();
     return (
         <FormWrapper onSubmit={handleSaveSettings}>
-            {/* Nazwa użytkownika */}
+            {/* User name */}
             <div>
                 <label>{t('settings.lbl_user_name')}</label>
                 <p className={'py-2 text-[length:var(--text-lg)]'}>{user.name}</p>
@@ -86,13 +88,15 @@ export default function UserSettingsForm({userSettings, user, onSubmit}: UserSet
                 <p className={'py-2 text-[length:var(--text-lg)]'}>{user.email}</p>
             </div>
 
-            {/* Język */}
+            {/* Language */}
+            {showLanguages &&
             <div>
                 <label>{t('settings.lbl_language')}</label>
                 <LanguageSelect value={settings.language} onChange={handleLanguageChange}/>
             </div>
+            }
 
-            {/* Flagi */}
+            {/* Flags */}
             <div>
                 <label>{t('settings.lbl_extra_options')}</label>
                 <div>

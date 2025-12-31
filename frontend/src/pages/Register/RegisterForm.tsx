@@ -8,6 +8,7 @@ import {LanguageSelect} from '@/components/LanguageSelect';
 import {useMessage} from '@/providers/MessageProvider';
 import {FormWrapper} from '@/components/Form';
 import {useLang} from '@/providers/LangProvider';
+import {useConfig} from '@/providers/ConfigProvider';
 
 type RegisterFormProps = {
     onSuccess?: () => void
@@ -24,6 +25,7 @@ function RegisterForm({onSuccess}: RegisterFormProps) {
     const [language, setLanguage] = useState(defaultLang);
     const navigate = useNavigate();
     const {showMessage} = useMessage();
+    const {showLanguages} = useConfig();
 
     const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{6,}$/;
     const minUsernameLength = 4;
@@ -94,10 +96,12 @@ function RegisterForm({onSuccess}: RegisterFormProps) {
                 />
             </div>
 
+            {showLanguages &&
             <div>
                 <label htmlFor="username">{t('register.lbl_language')}</label>
                 <LanguageSelect value={language} onChange={(lang) => setLanguage(lang)}/>
             </div>
+            }
 
             <div>
                 <label htmlFor="password">{t('register.lbl_password')}</label>
