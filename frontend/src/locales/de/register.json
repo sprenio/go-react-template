@@ -12,6 +12,7 @@
   "password_hint": "Mindestens 6 Zeichen, einschließlich Buchstabe, Zahl und Sonderzeichen.",
   "username_hint": "Mindestens 4 Zeichen.",
   "submit": "Registrieren",
+  "pending": "Anfrage wird gesendet...",
   "error_match": "Passwörter stimmen nicht überein.",
   "error_weak": "Das Passwort muss mindestens 6 Zeichen lang sein und einen Buchstaben, eine Zahl und ein Sonderzeichen enthalten.",
   "success": "Registrierung erfolgreich! Überprüfe dein E-Mail-Postfach.",

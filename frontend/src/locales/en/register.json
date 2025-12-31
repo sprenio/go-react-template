@@ -12,6 +12,7 @@
   "password_hint": "Min. 6 characters, must include a letter, a number, and a special character.",
   "username_hint": "Min. 4 characters.",
   "submit": "Register",
+  "pending": "Sending request...",
   "error_match": "Passwords do not match.",
   "error_weak": "Password must be at least 6 characters long and include a letter, number, and special character.",
   "success": "Registration completed successfully! Check your email inbox.",
