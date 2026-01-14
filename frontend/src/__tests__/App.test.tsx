@@ -65,7 +65,7 @@ describe('When not authenticated', () => {
                 auth: {
                     setLoginUser: vi.fn(),
                     logout: vi.fn(),
-                    user: null,
+                    appUser: null,
                     meInProgress: false
                 },
                 featureFlags: {
@@ -122,7 +122,10 @@ test('shows dashboard when authenticated', async () => {
         auth: {
             setLoginUser: vi.fn(),
             logout: vi.fn(),
-            user: null,
+            appUser: {
+                name: 'test_user',
+                email: 'user@test.com',
+            },
             meInProgress: false
         },
     });

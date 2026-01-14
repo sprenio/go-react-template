@@ -9,19 +9,23 @@ import {AppThemeProvider} from '@/providers/AppThemeProvider';
 import {MemoryRouter} from 'react-router-dom';
 import React from 'react';
 import type {JSX} from 'react';
+import type { AuthContextType } from '@/providers/AuthProvider';
+
+type RenderOptions = {
+    route?: string;
+    auth?: Partial<AuthContextType>;
+    featureFlags?: {
+        flags?: Record<string, boolean>;
+    };
+};
 
 export function renderWithProviders(
     ui: JSX.Element,
     {
         route = '/',
-        auth = {
-            setLoginUser: vi.fn(),
-            logout: vi.fn(),
-            appUser: null,
-            meInProgress: false
-        },
+        auth = {},
         featureFlags = {flags: {register: true, reset_password: true}},
-    } = {}
+    }: RenderOptions = {}
 ) {
     const queryClient = new QueryClient();
 
@@ -40,6 +44,13 @@ export function renderWithProviders(
         );
     };
 
+    const authValue: AuthContextType = {
+        setLoginUser: vi.fn(),
+        logout: vi.fn(),
+        appUser: null,
+        meInProgress: false,
+        ...auth, // override
+    };
     return render(
         <MemoryRouter initialEntries={[route]}>
             <QueryClientProvider client={queryClient}>
@@ -47,7 +58,7 @@ export function renderWithProviders(
                     <MessageProvider>
                         <MockConfigProvider>
                             <LangProvider>
-                                <AuthContext.Provider value={auth}>
+                                <AuthContext.Provider value={authValue}>
                                     <AppThemeProvider>
                                         <AppThemeProvider>{ui}</AppThemeProvider>
                                     </AppThemeProvider>
