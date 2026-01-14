@@ -1,9 +1,9 @@
 package config
 
 import (
-	"backend/pkg/logger"
 	"embed"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 
@@ -13,6 +13,7 @@ import (
 )
 
 type Config struct {
+	AppEnv          string              `mapstructure:"app_env"`
 	AppName         string              `mapstructure:"app_name" yaml:"app_name"`
 	LogLevel        string              `mapstructure:"log_level" yaml:"log_level"`
 	DB              DBConfig            `mapstructure:"database" yaml:"database"`
@@ -24,8 +25,18 @@ type Config struct {
 	EmailChange     EmailChangeConfig   `mapstructure:"email_change" yaml:"email_change"`
 	Email           EmailConfig         `mapstructure:"email" yaml:"email"`
 	DefaultLanguage string              `mapstructure:"default_language" yaml:"default_language"`
+	Token           TokenConfig         `mapstructure:"token" yaml:"token"`
 }
 
+func (c *Config) IsDevEnv() bool {
+	return c.AppEnv == "dev"
+}
+
+type TokenConfig struct {
+	AccessTokenTtlMinutes uint8  `mapstructure:"access_token_ttl_minutes" yaml:"access_token_ttl_minutes"`
+	RefreshTokenTtlDays   uint8  `mapstructure:"refresh_token_ttl_days" yaml:"refresh_token_ttl_days"`
+	JwtSecret             string `mapstructure:"jwt_secret" yaml:"jwt_secret"`
+}
 type EmailChangeConfig struct {
 	ExpirationDays int `mapstructure:"expiration_days" yaml:"expiration_days"`
 }
@@ -102,9 +113,11 @@ func loadConfig() (*Config, error) {
 	setDefaults(v)
 
 	files := []string{"config.yaml"}
+	appEnv := "prod"
 	if env := os.Getenv("APP_ENV"); env != "" {
-		files = append(files, fmt.Sprintf("config_%s.yaml", env))
+		appEnv = env
 	}
+	files = append(files, fmt.Sprintf("config_%s.yaml", appEnv))
 	for _, f := range files {
 		data, err := configFiles.ReadFile(f)
 		if err != nil {
@@ -120,7 +133,7 @@ func loadConfig() (*Config, error) {
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, err
 	}
-
+	cfg.AppEnv = appEnv
 	setConfigByEnv(&cfg)
 	if cfg.DB.DSN == "" {
 		cfg.DB.DSN = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", cfg.DB.User, cfg.DB.Pass, cfg.DB.Host, cfg.DB.Port, cfg.DB.DbName)
@@ -159,6 +172,7 @@ func setConfigByEnv(cfg *Config) {
 	setRegisterConfigByEnv(cfg)
 	setEmailConfigByEnv(cfg)
 	setEmailChangeConfigByEnv(cfg)
+	setTokenConfigByEnv(cfg)
 }
 
 func setEmailConfigByEnv(cfg *Config) {
@@ -189,7 +203,7 @@ func setRegisterConfigByEnv(cfg *Config) {
 	if expirationDays := os.Getenv("REGISTER_EXPIRATION_DAYS"); expirationDays != "" {
 		intDays, err := strconv.Atoi(expirationDays)
 		if err != nil {
-			logger.Error("Invalid REGISTER_EXPIRATION_DAYS value: %v; setting to default", err)
+			log.Printf("Invalid REGISTER_EXPIRATION_DAYS value: %v; setting to default", err)
 			intDays = 1 // default expiration days
 		}
 		cfg.Register.ExpirationDays = intDays
@@ -202,7 +216,7 @@ func setResetPasswordConfigByEnv(cfg *Config) {
 	if expirationDays := os.Getenv("RESET_PASSWORD_EXPIRATION_DAYS"); expirationDays != "" {
 		intDays, err := strconv.Atoi(expirationDays)
 		if err != nil {
-			logger.Error("Invalid RESET_PASSWORD_EXPIRATION_DAYS value: %v; setting to default", err)
+			log.Printf("Invalid RESET_PASSWORD_EXPIRATION_DAYS value: %v; setting to default", err)
 			intDays = 1 // default expiration days
 		}
 		cfg.ResetPassword.ExpirationDays = intDays
@@ -213,7 +227,7 @@ func setEmailChangeConfigByEnv(cfg *Config) {
 		intDays, err := strconv.Atoi(expirationDays)
 		if err != nil {
 
-			logger.Error("Invalid EMAIL_CHANGE_EXPIRATION_DAYS value: %v; setting to default", err)
+			log.Printf("Invalid EMAIL_CHANGE_EXPIRATION_DAYS value: %v; setting to default", err)
 			intDays = 1 // default expiration days
 		}
 		cfg.EmailChange.ExpirationDays = intDays
@@ -227,7 +241,7 @@ func setWebServerConfigByEnv(cfg *Config) {
 	if httpPort := os.Getenv("WEBSERVER_PORT"); httpPort != "" {
 		intPort, err := strconv.Atoi(httpPort)
 		if err != nil {
-			logger.Error("Invalid DB_PORT value: %v; setting to default", err)
+			log.Printf("Invalid DB_PORT value: %v; setting to default", err)
 			intPort = 8080 // default HTTP port
 		}
 		cfg.WebServer.HTTPPort = intPort
@@ -247,7 +261,7 @@ func setDatabaseConfigByEnv(cfg *Config) {
 	if dbPort := os.Getenv("DB_PORT"); dbPort != "" {
 		intPort, err := strconv.Atoi(dbPort)
 		if err != nil {
-			logger.Error("Invalid DB_PORT value: %v; setting to default", err)
+			log.Printf("Invalid DB_PORT value: %v; setting to default", err)
 			intPort = 3306 // default MySQL port
 		}
 		cfg.DB.Port = intPort
@@ -264,7 +278,7 @@ func setRabbitMQConfigByEnv(cfg *Config) {
 	if rabbitMQPort := os.Getenv("RABBITMQ_PORT"); rabbitMQPort != "" {
 		intPort, err := strconv.Atoi(rabbitMQPort)
 		if err != nil {
-			logger.Error("Invalid RABBITMQ_PORT value: %v; setting to default", err)
+			log.Printf("Invalid RABBITMQ_PORT value: %v; setting to default", err)
 			intPort = 5672 // default RabbitMQ port
 		}
 		cfg.RabbitMQ.Port = intPort
@@ -291,5 +305,27 @@ func setGeneralConfigByEnv(cfg *Config) {
 	}
 	if logLevel := os.Getenv("LOG_LEVEL"); logLevel != "" {
 		cfg.LogLevel = logLevel
+	}
+}
+
+func setTokenConfigByEnv(cfg *Config) {
+	if secret := os.Getenv("JWT_SECRET"); secret != "" {
+		cfg.Token.JwtSecret = secret
+	}
+	if accessTTL := os.Getenv("ACCESS_TOKEN_TTL_MINUTES"); accessTTL != "" {
+		intTTL, err := strconv.Atoi(accessTTL)
+		if err != nil || intTTL < 1 {
+			log.Printf("Invalid ACCESS_TOKEN_TTL_MINUTES value: %v", err)
+		} else {
+			cfg.Token.AccessTokenTtlMinutes = uint8(intTTL)
+		}
+	}
+	if refreshTTL := os.Getenv("REFRESH_TOKEN_TTL_DAYS"); refreshTTL != "" {
+		intTTL, err := strconv.Atoi(refreshTTL)
+		if err != nil || intTTL < 1 {
+			log.Printf("Invalid REFRESH_TOKEN_TTL_DAYS value: %v", err)
+		} else {
+			cfg.Token.RefreshTokenTtlDays = uint8(intTTL)
+		}
 	}
 }

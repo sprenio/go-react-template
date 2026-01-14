@@ -1,15 +1,12 @@
 package handler_test
 
 import (
-	"backend/internal/contexthelper"
 	"backend/internal/handler"
 	"backend/internal/models"
 	"bytes"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -24,7 +21,7 @@ func TestSettingsHandler_Success(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	// Mock user settings lookup (current language is 1 = en)
 	mock.ExpectQuery("SELECT.*FROM user_settings").WillReturnRows(
@@ -47,22 +44,18 @@ func TestSettingsHandler_Success(t *testing.T) {
 		Language: &lang,
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/settings", bytes.NewBuffer(body))
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	ctx = contexthelper.SetUserId(ctx, 1)
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/settings",
+		bytes.NewBuffer(body),
+		TestDeps{DB: db, UserID: 1},
+	)
 
 	// Execute
 	h.SettingsHandler(rr, req)
 
-	// Assert
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200, got %d", resp.StatusCode)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rr.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -71,60 +64,41 @@ func TestSettingsHandler_Success(t *testing.T) {
 }
 
 func TestSettingsHandler_InvalidJSON(t *testing.T) {
-	db, _, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
-
-	h := handler.NewHandler(db, nil)
-
-	req := httptest.NewRequest(http.MethodPost, "/settings", bytes.NewBufferString("invalid json"))
-	rr := httptest.NewRecorder()
-
+	h := handler.NewHandler()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/settings",
+		bytes.NewBufferString("invalid json"),
+		TestDeps{},
+	)
 	h.SettingsHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("expected status 400, got %d", resp.StatusCode)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", rr.Code)
 	}
 }
 
 func TestSettingsHandler_InvalidAppOpt2(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	invalidOpt := models.AppOption2("INVALID_OPTION")
 	reqBody := models.UserSettingsData{
 		AppOpt2: &invalidOpt,
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/settings", bytes.NewBuffer(body))
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	ctx = contexthelper.SetUserId(ctx, 1)
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/settings",
+		bytes.NewBuffer(body),
+		TestDeps{UserID: 1},
+	)
 
 	h.SettingsHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("expected status 400, got %d", resp.StatusCode)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", rr.Code)
 	}
-
-	// Validation should fail early, so no database calls should be made
-	// However, if the service is called, we'll just verify the status code is correct
-	_ = mock.ExpectationsWereMet() // Don't fail if expectations are met - validation might not be as early as expected
 }
 
 func TestSettingsHandler_ValidAppOpt2(t *testing.T) {
@@ -134,7 +108,7 @@ func TestSettingsHandler_ValidAppOpt2(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	// Mock user settings lookup
 	mock.ExpectQuery("SELECT.*FROM user_settings").WillReturnRows(
@@ -150,20 +124,16 @@ func TestSettingsHandler_ValidAppOpt2(t *testing.T) {
 		AppOpt2: &optA,
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/settings", bytes.NewBuffer(body))
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	ctx = contexthelper.SetUserId(ctx, 1)
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
-
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/settings",
+		bytes.NewBuffer(body),
+		TestDeps{DB: db, UserID: 1},
+	)
 	h.SettingsHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200, got %d", resp.StatusCode)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rr.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -178,7 +148,7 @@ func TestSettingsHandler_ServiceError(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	// Mock user settings lookup error
 	mock.ExpectQuery("SELECT.*FROM user_settings").WillReturnError(sql.ErrNoRows)
@@ -188,20 +158,16 @@ func TestSettingsHandler_ServiceError(t *testing.T) {
 		Language: &lang,
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/settings", bytes.NewBuffer(body))
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	ctx = contexthelper.SetUserId(ctx, 1)
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
-
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/settings",
+		bytes.NewBuffer(body),
+		TestDeps{DB: db, UserID: 1},
+	)
 	h.SettingsHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusInternalServerError {
-		t.Errorf("expected status 500, got %d", resp.StatusCode)
+	if rr.Code != http.StatusInternalServerError {
+		t.Errorf("expected status 500, got %d", rr.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

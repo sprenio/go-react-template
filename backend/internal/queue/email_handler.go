@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"backend/config"
+	"backend/internal/contexthelper"
 	"backend/internal/email"
 	"backend/internal/models"
 	"backend/internal/payload"
@@ -84,7 +84,7 @@ func (c *Consumer) sendWelcomeEmail(ctx context.Context, rawMessage json.RawMess
 		return err
 	}
 
-	sender := email.GetEmailSender()
+	sender := email.GetEmailSender(ctx)
 	if sender == nil {
 		return errors.New("failed to get email sender")
 	}
@@ -97,10 +97,7 @@ func (c *Consumer) sendWelcomeEmail(ctx context.Context, rawMessage json.RawMess
 		logger.Error("Invalid email data")
 		return errors.New("invalid email data")
 	}
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
+	cfg := contexthelper.GetConfig(ctx)
 	langRepo := repository.NewLanguageRepository(c.db)
 	lang, err := langRepo.GetById(ctx, payloadData.LanguageId)
 	if err != nil {
@@ -139,7 +136,7 @@ func (c *Consumer) sendEmailChangeEmail(ctx context.Context, rawMessage json.Raw
 		return errors.New("invalid user id in token")
 	}
 
-	sender := email.GetEmailSender()
+	sender := email.GetEmailSender(ctx)
 	if sender == nil {
 		return errors.New("failed to get email sender")
 	}
@@ -152,10 +149,7 @@ func (c *Consumer) sendEmailChangeEmail(ctx context.Context, rawMessage json.Raw
 		logger.Error("Invalid email data")
 		return errors.New("invalid email data")
 	}
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
+	cfg := contexthelper.GetConfig(ctx)
 
 	userRepository := repository.NewUserRepository(c.db)
 	user, err := userRepository.GetById(ctx, ct.UserId)
@@ -196,15 +190,12 @@ func (c *Consumer) sendPasswordResetEmail(ctx context.Context, rawMessage json.R
 	if err != nil {
 		return err
 	}
-	sender := email.GetEmailSender()
+	sender := email.GetEmailSender(ctx)
 	if sender == nil {
 		return errors.New("failed to get email sender")
 	}
 
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
+	cfg := contexthelper.GetConfig(ctx)
 
 	link := fmt.Sprintf("%s/reset-password/%s", cfg.Frontend.BaseURL, data.PasswordResetToken)
 	err = sender.SendPasswordResetEmail(user.Email, user.Name, link)

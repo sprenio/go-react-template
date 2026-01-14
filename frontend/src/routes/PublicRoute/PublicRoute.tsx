@@ -3,7 +3,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import React from "react";
 
 export function PublicRoute({ children }: { children: React.ReactNode }) {
-    const { token } = useAuth();
-    if (token) return <Navigate to="/" replace />;
+    const { appUser } = useAuth();
+    if (appUser) return <Navigate to="/" replace />;
     return children;
 }

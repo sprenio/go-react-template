@@ -18,7 +18,8 @@ func (h *Handler) MeHandler(w http.ResponseWriter, r *http.Request) {
 		response.UnauthorizedErrorResponse(w, "User not found")
 		return
 	}
-	userRepo := repository.NewUserRepository(h.db)
+	db := contexthelper.GetDb(ctx)
+	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 
 	user, err := userService.GetUserResponseData(ctx, userID)

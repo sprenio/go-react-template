@@ -10,15 +10,14 @@ type LanguageSelectProps = {
 }
 export default function LanguageSelect({ value = '', onChange, flagsOnly = false }: LanguageSelectProps) {
     const { config, showLanguages } = useConfig();
-    if (!showLanguages) {
-        return (<></>);
-    }
+
     const { lang: defaultLang } = useLang();
     value = value || defaultLang;
     const languages = config.Languages || [];
     const current = languages.find((lang:LangType) => lang.code === value) || languages[0];
     const [selected, setSelected] = useState(current);
     const [open, setOpen] = useState(false);
+
 
     useEffect(() => {
         if (languages.length > 0) {
@@ -27,6 +26,9 @@ export default function LanguageSelect({ value = '', onChange, flagsOnly = false
         }
     }, [languages, value]);
 
+    if (!showLanguages) {
+        return null;
+    }
     const handleSelect = (lang:LangType) => {
         setSelected(lang);
         setOpen(false);

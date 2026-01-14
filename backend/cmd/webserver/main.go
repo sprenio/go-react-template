@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"backend/config"
+	"backend/internal/contexthelper"
 	"backend/internal/handler"
 	"backend/internal/helper"
 	"backend/internal/router"
@@ -22,7 +23,7 @@ func main() {
 		logger.Fatal("Nie można załadować konfiguracji: %v", err)
 	}
 
-	logger.Init(cfg.LogLevel)
+	logger.Init(cfg.LogLevel, contexthelper.GetRequestID)
 	logger.Info("Uruchamianie aplikacji: %s", cfg.AppName)
 
 	// Kontekst z timeoutem na połączenie z DB
@@ -39,11 +40,11 @@ func main() {
 	logger.Info("Wszystkie usługi gotowe, start backendu...")
 
 	// Inicjalizacja handlerów i routera
-	h := handler.NewHandler(db, rabbitConn)
+	h := handler.NewHandler()
 	webHostPort := fmt.Sprintf("%s:%v", cfg.WebServer.Host, cfg.WebServer.HTTPPort)
 	srv := &http.Server{
 		Addr:    webHostPort,
-		Handler: router.SetupRouter(h),
+		Handler: router.SetupRouter(h, cfg, db, rabbitConn),
 	}
 	
 	// Obsługa sygnałów (graceful shutdown)

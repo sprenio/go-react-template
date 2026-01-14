@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"backend/internal/contexthelper"
 	"backend/internal/models"
 	"backend/internal/repository"
 	"backend/internal/response"
@@ -37,8 +38,9 @@ func (h *Handler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	usRepo := repository.NewUserSettingsRepository(h.db)
-	langRepo := repository.NewLanguageRepository(h.db)
+	db := contexthelper.GetDb(ctx)
+	usRepo := repository.NewUserSettingsRepository(db)
+	langRepo := repository.NewLanguageRepository(db)
 
 	service := service.NewUserSettingsService(usRepo, langRepo)
 	err := service.Update(ctx, req)

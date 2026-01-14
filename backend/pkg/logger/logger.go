@@ -1,12 +1,12 @@
 package logger
 
 import (
-	"backend/internal/contexthelper"
 	"context"
 	"log"
 	"os"
 )
 
+type requestIdGetter = func (ctx context.Context) string
 var (
 	infoLogger  = log.New(&callerAwareWriter{"info", os.Stdout}, "", 0)
 	errorLogger = log.New(&callerAwareWriter{"error", os.Stderr}, "", 0)
@@ -15,13 +15,15 @@ var (
 	warnLogger  = log.New(&callerAwareWriter{"warn", os.Stdout}, "", 0)
 
 	logLevel = "info" // default
+	getRequestId requestIdGetter
 )
 
 const RequestIdLogPrefix = "reqID:"
 
-func Init(level string) {
+func Init(level string, rqIdGetter requestIdGetter) {
 	logLevel = level
 	infoLogger.Println("Logger initialized with level:", level)
+	getRequestId = rqIdGetter
 }
 
 func Info(msg string, args ...any) {
@@ -81,8 +83,12 @@ func WarnCtx(ctx context.Context, msg string, args ...any) {
 }
 
 func prefixFromContext(ctx context.Context) string {
-	if reqID, ok := ctx.Value(contexthelper.RequestIDKey).(string); ok {
-		return "[" + RequestIdLogPrefix + " " + reqID + "] "
+	if getRequestId == nil {
+		return ""
+	}
+	reqId := getRequestId(ctx)
+	if reqId != "" {
+		return "[" + RequestIdLogPrefix + " " + reqId + "] "
 	}
 	return ""
 }

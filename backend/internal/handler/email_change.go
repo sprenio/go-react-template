@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"backend/internal/response"
+	"backend/internal/contexthelper"
 	"backend/internal/repository"
+	"backend/internal/response"
 	"backend/internal/service"
 	"backend/pkg/logger"
 	"backend/pkg/validation"
@@ -28,13 +29,13 @@ func(h *Handler) EmailChangeHandler(w http.ResponseWriter, r *http.Request) {
 		response.InvalidInputValueErrorResponse(w, "email", "invalid email format")
 		return
 	}
-
-	uRepo := repository.NewUserRepository(h.db)
-	ctRepo := repository.NewConfirmationTokenRepository(h.db)
-	langRepo := repository.NewLanguageRepository(h.db)
+	db := contexthelper.GetDb(ctx)
+	uRepo := repository.NewUserRepository(db)
+	ctRepo := repository.NewConfirmationTokenRepository(db)
+	langRepo := repository.NewLanguageRepository(db)
 
 	service := service.NewEmailService(ctRepo, uRepo, langRepo)
-	err := service.ChangeEmail(ctx, h.rabbitConn, req.Email)
+	err := service.ChangeEmail(ctx, req.Email)
 
 	if err != nil {
 		response.InternalServerError(w)

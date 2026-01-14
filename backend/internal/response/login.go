@@ -1,13 +1,14 @@
 package response
 
 import (
-	"net/http"
 	"context"
+	"net/http"
 
 	"backend/internal/apicodes"
+	"backend/internal/models"
 )
 
-func SetLoginSuccessResponse(w http.ResponseWriter, ctx context.Context, user UserResponseData) {
+func SetLoginSuccessResponse(w http.ResponseWriter, ctx context.Context, user models.UserResponseData) {
 	SetMeSuccessResponse(w, ctx, user)
 }
 

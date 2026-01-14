@@ -1,13 +1,11 @@
 package handler_test
 
 import (
-	"backend/internal/contexthelper"
 	"backend/internal/handler"
-	"context"
+	"backend/internal/contexthelper"
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -22,7 +20,7 @@ func TestMeHandler_Success(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	// Mock user data lookup - GetDataById returns 11 columns
 	mock.ExpectQuery("SELECT.*FROM users AS u").WillReturnRows(
@@ -30,13 +28,19 @@ func TestMeHandler_Success(t *testing.T) {
 			AddRow(1, "testuser", "test@example.com", time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC), uint64(0), uint64(0), "", "", "", "en"),
 	)
 
-	// Create request with user ID in context
-	req := httptest.NewRequest(http.MethodGet, "/me", nil)
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	ctx = contexthelper.SetUserId(ctx, 1)
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodGet,
+		"/me",
+		nil,
+		TestDeps{
+			DB: db,
+			UserID: 1,
+			AccessTokenData: &contexthelper.AccessTokenData{
+				UserId: 1,
+				SetCookies: true,
+			},
+		},
+	)
 
 	// Execute
 	h.MeHandler(rr, req)
@@ -57,31 +61,25 @@ func TestMeHandler_Success(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
+	if(!IsAccessCookieSet(resp)){
+		t.Fatalf("expected access cookie to be set")
+	}
 }
 
 func TestMeHandler_Unauthorized(t *testing.T) {
-	db, _, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
-
-	// Create request without user ID in context
-	req := httptest.NewRequest(http.MethodGet, "/me", nil)
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
+	h := handler.NewHandler()
+	req, rr := NewTestRequest(
+		http.MethodGet,
+		"/me",
+		nil,
+		TestDeps{},
+	)
 
 	h.MeHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("expected status 401, got %d", resp.StatusCode)
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d", rr.Code)
 	}
 }
 
@@ -92,29 +90,31 @@ func TestMeHandler_UserNotFound(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	// Mock user not found
 	mock.ExpectQuery("SELECT.*FROM users").WillReturnError(sql.ErrNoRows)
 
-	req := httptest.NewRequest(http.MethodGet, "/me", nil)
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	ctx = contexthelper.SetUserId(ctx, 1)
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodGet,
+		"/me",
+		nil,
+		TestDeps{DB: db, UserID: 1},
+	)
 
 	h.MeHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusInternalServerError {
-		t.Errorf("expected status 500, got %d", resp.StatusCode)
+	if rr.Code != http.StatusInternalServerError {
+		t.Errorf("expected status 500, got %d", rr.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+	resp := rr.Result()
+	defer resp.Body.Close()
+	if(IsAccessCookieSet(resp)){
+		t.Fatalf("expected access cookie not to be set")
 	}
 }
 

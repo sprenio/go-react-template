@@ -2,6 +2,7 @@ package handler
 
 import (
 	"backend/config"
+	"backend/internal/contexthelper"
 	"backend/internal/repository"
 	"backend/internal/response"
 	"backend/internal/service"
@@ -11,14 +12,10 @@ import (
 
 func (h *Handler) CfgHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	cfg, err := config.GetConfig()
-	if err != nil {
-		logger.ErrorCtx(ctx, "Failed to load config file: %v", err)
-		response.InternalServerError(w)
-		return
-	}
+	cfg := contexthelper.GetConfig(ctx)
+	db := contexthelper.GetDb(ctx)
 
-	langRepo := repository.NewLanguageRepository(h.db)
+	langRepo := repository.NewLanguageRepository(db)
 	langService := service.NewLanguageService(langRepo)
 
 	languages, err := langService.GetLanguages(ctx)

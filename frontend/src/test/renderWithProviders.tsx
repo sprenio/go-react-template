@@ -15,11 +15,9 @@ export function renderWithProviders(
     {
         route = '/',
         auth = {
-            token: '',
             setLoginUser: vi.fn(),
-            setLoginToken: vi.fn(),
             logout: vi.fn(),
-            user: null,
+            appUser: null,
             meInProgress: false
         },
         featureFlags = {flags: {register: true, reset_password: true}},
@@ -36,7 +34,7 @@ export function renderWithProviders(
             DefaultLanguage: 'pl'
         };
         return (
-            <ConfigContext.Provider value={{config: mockConfig, loading: false}}>
+            <ConfigContext.Provider value={{config: mockConfig, loading: false, showLanguages: true}}>
                 {children}
             </ConfigContext.Provider>
         );

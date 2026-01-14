@@ -1,14 +1,12 @@
 package handler_test
 
 import (
-	"backend/internal/contexthelper"
 	"backend/internal/handler"
 	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -24,7 +22,7 @@ func TestPasswordChangeHandler_Success(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	token := "test-token-123"
 	newPassword := "NewPassword123!@#"
@@ -46,25 +44,22 @@ func TestPasswordChangeHandler_Success(t *testing.T) {
 		"password": newPassword,
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/password-change/"+token, bytes.NewBuffer(body))
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	req = req.WithContext(ctx)
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/password-change/"+token,
+		bytes.NewBuffer(body),
+		TestDeps{DB: db},
+	)
 
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("token", token)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
-	rr := httptest.NewRecorder()
-
 	// Execute
 	h.PasswordChangeHandler(rr, req)
 
-	// Assert
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200, got %d", resp.StatusCode)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rr.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -73,32 +68,26 @@ func TestPasswordChangeHandler_Success(t *testing.T) {
 }
 
 func TestPasswordChangeHandler_EmptyToken(t *testing.T) {
-	db, _, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
-
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	reqBody := map[string]string{
 		"password": "NewPassword123!@#",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/password-change/", bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
-
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/password-change/",
+		bytes.NewBuffer(body),
+		TestDeps{},
+	)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("token", "")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 	h.PasswordChangeHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("expected status 404, got %d", resp.StatusCode)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d", rr.Code)
 	}
 }
 
@@ -109,7 +98,7 @@ func TestPasswordChangeHandler_InvalidJSON(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	token := "test-token-123"
 
@@ -118,13 +107,17 @@ func TestPasswordChangeHandler_InvalidJSON(t *testing.T) {
 		sqlmock.NewRows([]string{"id", "token", "user_id", "type", "payload", "status", "expires_at", "status_changed_at", "created_at"}).
 			AddRow(1, token, 1, "password_change", "{}", "NEW", time.Now().Add(1*time.Hour), time.Now(), time.Now()),
 	)
-
-	req := httptest.NewRequest(http.MethodPost, "/password-change/"+token, bytes.NewBufferString("invalid json"))
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/password-change/"+token,
+		bytes.NewBufferString("invalid json"),
+		TestDeps{DB:db},
+	)
 
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("token", token)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	
 
 	h.PasswordChangeHandler(rr, req)
 
@@ -147,7 +140,7 @@ func TestPasswordChangeHandler_InvalidPassword(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	token := "test-token-123"
 
@@ -161,8 +154,12 @@ func TestPasswordChangeHandler_InvalidPassword(t *testing.T) {
 		"password": "weak",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/password-change/"+token, bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/password-change/"+token,
+		bytes.NewBuffer(body),
+		TestDeps{DB:db},
+	)
 
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("token", token)
@@ -189,7 +186,7 @@ func TestPasswordChangeHandler_TokenNotFound(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	token := "invalid-token"
 
@@ -200,9 +197,13 @@ func TestPasswordChangeHandler_TokenNotFound(t *testing.T) {
 		"password": "NewPassword123!@#",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/password-change/"+token, bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
 
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/password-change/"+token,
+		bytes.NewBuffer(body),
+		TestDeps{DB:db},
+	)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("token", token)
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))

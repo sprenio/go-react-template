@@ -6,7 +6,7 @@ import { getApiCodeDescription, apiCodes } from '@/api/apiCodes';
 import { toast } from 'react-hot-toast';
 import { useMessage } from '@/providers/MessageProvider';
 import { FormWrapper } from '@/components/Form';
-import {ApiError} from "@/api";
+import {ApiError} from '@/api';
 
 export default function LoginForm() {
     const { t } = useTranslation();
@@ -21,9 +21,10 @@ export default function LoginForm() {
         e.preventDefault();
         clearMessage();
         loginMutation.mutate(
-            { email, password },
+            { email, password, remember_me: rememberMe },
             {
                 onSuccess: (data) => {
+                    toast.success(t('login.success'))
                     setLoginUser(data.user);
                     setEmail('');
                 },

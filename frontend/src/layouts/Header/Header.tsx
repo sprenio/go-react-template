@@ -5,7 +5,7 @@ import {ThemeToggle} from '@/components/ThemeToggle';
 import {useTheme as useAppTheme} from '@/providers/AppThemeProvider';
 import {useTranslation} from 'react-i18next';
 import {Link} from 'react-router-dom';
-import {useAuth, isLoggedIn} from '@/providers/AuthProvider';
+import {useAuth} from '@/providers/AuthProvider';
 import {logoutReasonCodes} from '@/api';
 import {LanguageSelect} from '@/components/LanguageSelect';
 import {useLang} from '@/providers/LangProvider';
@@ -13,7 +13,7 @@ import {useLang} from '@/providers/LangProvider';
 export function Header() {
     const {config} = useConfig();
     const {themeName} = useAppTheme();
-    const {logout} = useAuth();
+    const {logout, appUser} = useAuth();
     const {t} = useTranslation();
 
     const [menuOpen, setMenuOpen] = useState(false);
@@ -35,7 +35,7 @@ export function Header() {
             </div>
 
             <div className="flex items-center gap-4 top-menu">
-                {isLoggedIn() && (
+                {appUser && (
                     <>
                         <nav className="items-center gap-4 hidden md:flex" role="navigation">
                             <Link className="menu-link desktop" to="/dashboard">{t('dashboard.menu_title')}</Link>

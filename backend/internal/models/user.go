@@ -11,3 +11,12 @@ type User struct {
     ConfirmedAt  time.Time `db:"confirmed_at" json:"confirmed_at,omitempty"`
 }
 
+type UserResponseData struct {
+	Id           uint                 `json:"id"`
+	Name         string               `json:"name"`
+	Email        string               `json:"email"`
+	RegisteredAt string               `json:"registered_at"`
+	ConfirmedAt  string               `json:"confirmed_at,omitempty"`
+	Settings     UserSettingsData     `json:"settings,omitempty"`
+}
+

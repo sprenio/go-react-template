@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"backend/internal/apperrors"
+	"backend/internal/contexthelper"
 	"backend/internal/repository"
 	"backend/internal/response"
 	"backend/internal/service"
@@ -47,13 +48,13 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-
-	uRepo := repository.NewUserRepository(h.db)
-	ctRepo := repository.NewConfirmationTokenRepository(h.db)
-	langRepo := repository.NewLanguageRepository(h.db)
+	db := contexthelper.GetDb(ctx)
+	uRepo := repository.NewUserRepository(db)
+	ctRepo := repository.NewConfirmationTokenRepository(db)
+	langRepo := repository.NewLanguageRepository(db)
 
 	service := service.NewRegisterService(ctRepo, uRepo, langRepo)
-	err := service.RegisterUser(ctx, h.rabbitConn, req.Username, req.Email, req.Password, req.Language)
+	err := service.RegisterUser(ctx, req.Username, req.Email, req.Password, req.Language)
 	if err != nil {
 		logger.ErrorCtx(ctx, "Failed to register user: %v", err)
 		if apperrors.IsRegisterUserNameOrEmailTakenError(err) {

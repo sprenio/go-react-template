@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/config"
+	"backend/internal/contexthelper"
 	"backend/internal/helper"
 	"backend/internal/queue"
 	"backend/pkg/logger"
@@ -18,7 +19,7 @@ func main() {
 		logger.Fatal("Nie można załadować konfiguracji: %v", err)
 	}
 
-	logger.Init(cfg.LogLevel)
+	logger.Init(cfg.LogLevel, contexthelper.GetRequestID)
 
 	// Kontekst z timeoutem na połączenie z DB
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)

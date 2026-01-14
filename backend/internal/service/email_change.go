@@ -2,7 +2,6 @@ package service
 
 import (
 	"backend/internal/apperrors"
-	"backend/config"
 	"backend/internal/contexthelper"
 	"backend/internal/queue"
 	"backend/internal/payload"
@@ -11,7 +10,6 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type Email struct {
@@ -28,7 +26,7 @@ func NewEmailService(ctRepo *repository.ConfirmationTokenRepository, uRepo *repo
 	}
 }
 
-func (s *Email) ChangeEmail(ctx context.Context, rabbitConn *amqp.Connection, newEmail string) error {
+func (s *Email) ChangeEmail(ctx context.Context, newEmail string) error {
 	userId, ok := contexthelper.GetUserId(ctx)
 	if !ok {
 		return apperrors.NewGeneralCustomError("User not authenticated")
@@ -65,15 +63,13 @@ func (s *Email) ChangeEmail(ctx context.Context, rabbitConn *amqp.Connection, ne
 	if err != nil {
 		return err
 	}
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
+	cfg := contexthelper.GetConfig(ctx)
 
 	confirmationToken, err := s.confirmationTokenRepo.CreateEmailChangeToken(ctx, user.Id, jsonPayload, cfg.EmailChange.ExpirationDays)
 	if err != nil {
 		return err
 	}
+	rabbitConn := contexthelper.GetRabbitConn(ctx)
 	err = queue.PublishEmailChangeTask(ctx, rabbitConn, confirmationToken)
 	if err != nil {
 		logger.ErrorCtx(ctx, "Failed to enqueue email task: %v", err)

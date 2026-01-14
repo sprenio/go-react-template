@@ -1,14 +1,11 @@
 package handler_test
 
 import (
-	"backend/internal/contexthelper"
 	"backend/internal/handler"
 	"bytes"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -27,10 +24,7 @@ func TestResetPasswordHandler_Success(t *testing.T) {
 	}
 	defer db.Close()
 
-	// Note: RabbitMQ connection is nil for unit tests
-	// The service will log an error but continue (as per service code)
-	// For full integration testing, a real RabbitMQ connection would be needed
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	// Mock user lookup by email
 	mock.ExpectQuery("SELECT.*FROM users").WillReturnRows(
@@ -46,21 +40,18 @@ func TestResetPasswordHandler_Success(t *testing.T) {
 		"email": "test@example.com",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/reset-password", bytes.NewBuffer(body))
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/reset-password",
+		bytes.NewBuffer(body),
+		TestDeps{DB: db},
+	)
 
 	// Execute
 	h.ResetPasswordHandler(rr, req)
 
-	// Assert
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200, got %d", resp.StatusCode)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rr.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -69,76 +60,59 @@ func TestResetPasswordHandler_Success(t *testing.T) {
 }
 
 func TestResetPasswordHandler_InvalidJSON(t *testing.T) {
-	db, _, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
-
-	h := handler.NewHandler(db, nil)
-
-	req := httptest.NewRequest(http.MethodPost, "/reset-password", bytes.NewBufferString("invalid json"))
-	rr := httptest.NewRecorder()
+	h := handler.NewHandler()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/reset-password",
+		bytes.NewBufferString("invalid json"),
+		TestDeps{},
+	)
 
 	h.ResetPasswordHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("expected status 400, got %d", resp.StatusCode)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", rr.Code)
 	}
 }
 
 func TestResetPasswordHandler_EmptyEmail(t *testing.T) {
-	db, _, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
-
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	reqBody := map[string]string{
 		"email": "",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/reset-password", bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
-
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/reset-password",
+		bytes.NewBuffer(body),
+		TestDeps{},
+	)
 	h.ResetPasswordHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("expected status 400, got %d", resp.StatusCode)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", rr.Code)
 	}
 }
 
 func TestResetPasswordHandler_InvalidEmail(t *testing.T) {
-	db, _, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
-
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	reqBody := map[string]string{
 		"email": "invalid-email",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/reset-password", bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/reset-password",
+		bytes.NewBuffer(body),
+		TestDeps{},
+	)
 
 	h.ResetPasswordHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("expected status 400, got %d", resp.StatusCode)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", rr.Code)
 	}
 }
 
@@ -150,7 +124,7 @@ func TestResetPasswordHandler_UserNotFound(t *testing.T) {
 	defer db.Close()
 
 	rabbitConn := &amqp.Connection{}
-	h := handler.NewHandler(db, rabbitConn)
+	h := handler.NewHandler()
 
 	// Mock user not found
 	mock.ExpectQuery("SELECT.*FROM users").WillReturnError(sql.ErrNoRows)
@@ -159,17 +133,18 @@ func TestResetPasswordHandler_UserNotFound(t *testing.T) {
 		"email": "nonexistent@example.com",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/reset-password", bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/reset-password",
+		bytes.NewBuffer(body),
+		TestDeps{DB: db, RabbitConn:rabbitConn},
+	)
 
 	h.ResetPasswordHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
 	// Should still return 200 to prevent email enumeration
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected status 200, got %d", resp.StatusCode)
+	if rr.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rr.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

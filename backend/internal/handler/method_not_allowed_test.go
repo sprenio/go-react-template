@@ -1,12 +1,9 @@
 package handler_test
 
 import (
-	"backend/internal/contexthelper"
 	"backend/internal/handler"
-	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -19,13 +16,14 @@ func TestMethodNotAllowedHandler(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
-	req := httptest.NewRequest(http.MethodDelete, "/some-endpoint", nil)
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodDelete,
+		"/some-endpoint",
+		nil,
+		TestDeps{},
+	)
 
 	h.MethodNotAllowedHandler(rr, req)
 

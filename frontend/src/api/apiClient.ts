@@ -1,32 +1,30 @@
-import { clearToken, getToken } from '@/providers/AuthProvider';
 import { logoutReasonCodes, apiErrorCodes } from './apiCodes';
-import type {LogoutHandler, TokenRefresher, ApiFetchOptions, LoaderHandlers, ApiSuccessResponse} from './types';
+import type {LogoutHandler, ApiFetchOptions, LoaderHandlers, ApiSuccessResponse, SuccessHandler} from './types';
 import {ApiError} from './types';
 
 let logoutHandler: LogoutHandler | null = null;
-let tokenRefresher: TokenRefresher | null = null;
 let loaderHandlers: LoaderHandlers | null = null;
+let successHandler: SuccessHandler | null = null;
 
 export function setLogoutHandler(fn:LogoutHandler | null) {
     logoutHandler = fn;
 }
 
-export function setTokenRefresher(fn:TokenRefresher | null) {
-    tokenRefresher = fn;
-}
 export function setLoaderHandlers(handlers: LoaderHandlers) {
     loaderHandlers = handlers;
 }
-export async function apiFetch<T=unknown>(path:string, options:ApiFetchOptions = {}, loaderText = ''):Promise<ApiSuccessResponse<T>> {
-    const token = getToken();
+export function setSuccessHandler(handler: SuccessHandler){
+    successHandler = handler;
+}
+export async function apiFetch<T=unknown>(path:string, options:ApiFetchOptions = {}, showLoader = true, loaderText = ''):Promise<ApiSuccessResponse<T>> {
 
     const headers = {
         'Content-Type': 'application/json',
         'X-Frontend-Base-URL': window.location.origin,
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'credentials' : 'include',
         ...options.headers,
     };
-    loaderHandlers?.showLoader(loaderText);
+    showLoader && loaderHandlers?.showLoader(loaderText);
     try {
         const res = await fetch(`/api/${path.replace(/^\/+/, '')}`, {
             ...options,
@@ -58,7 +56,6 @@ export async function apiFetch<T=unknown>(path:string, options:ApiFetchOptions =
             }
 
             if (err.code === apiErrorCodes.UNAUTHORIZED) {
-                clearToken();
                 if (typeof logoutHandler === 'function') {
                     logoutHandler(logoutReasonCodes.SESSION_EXPIRED);
                 }
@@ -70,9 +67,8 @@ export async function apiFetch<T=unknown>(path:string, options:ApiFetchOptions =
         }
 
         if (isJson) {
-            // Refresh token obsłużony tutaj
-            if (data?.token && typeof tokenRefresher === 'function') {
-                tokenRefresher(data.token);
+            if (typeof successHandler === 'function') {
+                successHandler();
             }
             return data;
         }
@@ -81,7 +77,6 @@ export async function apiFetch<T=unknown>(path:string, options:ApiFetchOptions =
         throw new ApiError('unexpected response type', apiErrorCodes.UNKNOWN_ERROR);
     } catch (err:unknown) {
         if (err instanceof ApiError) {
-            console.log('instanceof apierror', err)
             throw err;
         }
         if (err instanceof Error) {
@@ -89,15 +84,15 @@ export async function apiFetch<T=unknown>(path:string, options:ApiFetchOptions =
         }
         throw new ApiError('Unknown error', apiErrorCodes.UNKNOWN_ERROR);
     } finally {
-        loaderHandlers?.hideLoader();
+        showLoader && loaderHandlers?.hideLoader();
     }
 }
 
 export const api = {
-    get: <T>(path:string, loaderText = ''):Promise<ApiSuccessResponse<T>> => apiFetch(path, {}, loaderText),
+    get: <T>(path:string, showLoader = true, loaderText = ''):Promise<ApiSuccessResponse<T>> => apiFetch(path, {}, showLoader, loaderText),
     post: <T>(path:string, body: any, loaderText = ''):Promise<ApiSuccessResponse<T>> =>
-        apiFetch(path, { method: 'POST', body: JSON.stringify(body) }, loaderText),
+        apiFetch(path, { method: 'POST', body: JSON.stringify(body) }, true, loaderText),
     put: <T>(path:string, body: string, loaderText = ''):Promise<ApiSuccessResponse<T>> =>
-        apiFetch(path, { method: 'PUT', body: JSON.stringify(body) }, loaderText),
-    delete: <T>(path:string, loaderText = ''):Promise<ApiSuccessResponse<T>> => apiFetch(path, { method: 'DELETE' }, loaderText),
+        apiFetch(path, { method: 'PUT', body: JSON.stringify(body) }, true, loaderText),
+    delete: <T>(path:string, loaderText = ''):Promise<ApiSuccessResponse<T>> => apiFetch(path, { method: 'DELETE' }, true, loaderText),
 };

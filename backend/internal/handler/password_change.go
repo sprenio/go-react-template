@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"backend/internal/contexthelper"
 	"backend/internal/repository"
 	"backend/internal/response"
 	"backend/internal/service"
@@ -26,7 +27,8 @@ func (h *Handler) PasswordChangeHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	ctRepo := repository.NewConfirmationTokenRepository(h.db)
+	db := contexthelper.GetDb(ctx)
+	ctRepo := repository.NewConfirmationTokenRepository(db)
 	if ctRepo == nil {
 		response.InternalServerError(w)
 		return
@@ -50,7 +52,7 @@ func (h *Handler) PasswordChangeHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	uRepo := repository.NewUserRepository(h.db)
+	uRepo := repository.NewUserRepository(db)
 	service := service.NewPasswordService(ctRepo, uRepo)
 	err = service.PasswordChange(ctx, ct.UserId, req.Password)
 

@@ -1,5 +1,4 @@
 export type LogoutHandler = (reason: string) => void;
-export type TokenRefresher = (token: string) => void;
 export class ApiError extends Error {
     code: number;
     data: unknown;
@@ -32,9 +31,9 @@ export type LoaderHandlers = {
     showLoader: (text?: string) => void
     hideLoader: () => void
 }
+export type SuccessHandler = () => void;
 
 export interface ApiSuccessResponse<T = undefined> {
-    token?: string;
     code: number;
     message: string;
     data: T;

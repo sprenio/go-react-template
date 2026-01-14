@@ -1,8 +1,8 @@
 package service
 
 import (
-	"backend/config"
 	"backend/internal/apperrors"
+	"backend/internal/contexthelper"
 	"backend/internal/models"
 	"backend/internal/payload"
 	"backend/internal/queue"
@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -33,7 +32,7 @@ func NewRegisterService(ctRepo *repository.ConfirmationTokenRepository, uRepo *r
 	}
 }
 
-func (s *RegisterService) RegisterUser(ctx context.Context, rabbitConn *amqp.Connection, userName, email, password, langCode string) error {
+func (s *RegisterService) RegisterUser(ctx context.Context, userName, email, password, langCode string) error {
 	// Implement the user registration logic here
 	if !validation.IsEmailValid(email) {
 		return apperrors.NewInvalidInputError("Email", "invalid email format")
@@ -62,10 +61,7 @@ func (s *RegisterService) RegisterUser(ctx context.Context, rabbitConn *amqp.Con
 		return apperrors.NewRegisterUserNameOrEmailTakenError("Register token already exists")
 	}
 
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
+	cfg := contexthelper.GetConfig(ctx)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -103,6 +99,7 @@ func (s *RegisterService) RegisterUser(ctx context.Context, rabbitConn *amqp.Con
 	if err != nil {
 		return err
 	}
+	rabbitConn := contexthelper.GetRabbitConn(ctx)
 	err = queue.PublishRegisterEmailTask(ctx, rabbitConn, registerToken)
 	if err != nil {
 		logger.ErrorCtx(ctx, "Failed to enqueue email task: %v", err)

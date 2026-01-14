@@ -1,16 +1,13 @@
 package handler
 
 import (
-	"database/sql"
-
-	amqp "github.com/rabbitmq/amqp091-go"
+	"time"
 )
 
 type Handler struct {
-	db *sql.DB
-	rabbitConn *amqp.Connection
+	startTime time.Time
 }
 
-func NewHandler(db *sql.DB, rabbitConn *amqp.Connection) *Handler {
-	return &Handler{db: db, rabbitConn: rabbitConn}
+func NewHandler() *Handler {
+	return &Handler{startTime: time.Now()}
 }

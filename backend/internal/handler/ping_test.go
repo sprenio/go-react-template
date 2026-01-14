@@ -1,12 +1,9 @@
 package handler_test
 
 import (
-	"backend/internal/contexthelper"
 	"backend/internal/handler"
-	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -18,20 +15,18 @@ type PingResponse struct {
 }
 
 func TestPingHandler(t *testing.T) {
-	// --- przygotowanie ---
-	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
-
-	// dodaj request ID do contextu, jak robi middleware
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
-
-	// --- wykonanie handlera ---
-	h := handler.NewHandler(nil, nil) // przekazujemy nil, bo nie używamy bazy ani innych zależności w PingHandler
+	req, rr := NewTestRequest(
+		http.MethodGet,
+		"/ping",
+		nil,
+		TestDeps{
+			RequestID: "test-id-123",
+		},
+	)
+	h := handler.NewHandler()
 	h.PingHandler(rr, req)
 
-	// --- asercje ---
+	// --- asserts ---
 	resp := rr.Result()
 	defer resp.Body.Close()
 
@@ -44,7 +39,7 @@ func TestPingHandler(t *testing.T) {
 		t.Errorf("expected Content-Type application/json, got %s", contentType)
 	}
 
-	// Sprawdź body
+	// Check body
 	var body PingResponse
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		t.Fatalf("error decoding response: %v", err)

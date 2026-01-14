@@ -3,9 +3,9 @@ import { useAuth } from '@/providers/AuthProvider';
 import React from "react";
 
 export function ProtectedRoute({ children }:{children: React.ReactNode}) {
-    const { token, meInProgress } = useAuth();
+    const { appUser, meInProgress } = useAuth();
 
-    if (!token) {
+    if (!appUser) {
         if (meInProgress) {
             return <div></div>;
         }

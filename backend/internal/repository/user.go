@@ -2,7 +2,6 @@ package repository
 
 import (
 	"backend/internal/models"
-	"backend/internal/response"
 	"context"
 	"database/sql"
 	"strings"
@@ -83,7 +82,7 @@ func (r *UserRepository) GetById(ctx context.Context, id uint) (models.User, err
 	return u, nil
 }
 
-func (r *UserRepository) GetDataById(ctx context.Context, id uint) (response.UserResponseData, error) {
+func (r *UserRepository) GetDataById(ctx context.Context, id uint) (models.User, models.UserSettingsData, error) {
 	var u models.User
 	var us models.UserSettings
 	langCode := ""
@@ -96,24 +95,17 @@ func (r *UserRepository) GetDataById(ctx context.Context, id uint) (response.Use
 	err := row.Scan(&u.Id, &u.Name, &u.Email, &u.RegisteredAt, &u.ConfirmedAt, &us.UserFlags, &us.AppFlags, &us.AppOpt1, &us.AppOpt2, &us.AppOpt3, &langCode)
 
 	if err != nil {
-		return response.UserResponseData{}, err
+		return u, models.UserSettingsData{}, err
 	}
-	userData := response.UserResponseData{
-		Id:           u.Id,
-		Name:         u.Name,
-		Email:        u.Email,
-		RegisteredAt: u.RegisteredAt.Format("2006-01-02 15:04:05"),
-		ConfirmedAt:  u.ConfirmedAt.Format("2006-01-02 15:04:05"),
-		Settings: models.UserSettingsData{
-			Language:  &langCode,
-			UserFlags: us.GetUserFlags(),
-			AppFlags:  us.GetAppFlags(),
-			AppOpt1:   &us.AppOpt1,
-			AppOpt2:   &us.AppOpt2,
-			AppOpt3:   &us.AppOpt3,
-		},
+	settingsData := models.UserSettingsData{
+		Language:  &langCode,
+		UserFlags: us.GetUserFlags(),
+		AppFlags:  us.GetAppFlags(),
+		AppOpt1:   &us.AppOpt1,
+		AppOpt2:   &us.AppOpt2,
+		AppOpt3:   &us.AppOpt3,
 	}
-	return userData, nil
+	return u, settingsData, err
 }
 
 func (r *UserRepository) ChangeEmail(ctx context.Context, userId uint, newEmail string) error {

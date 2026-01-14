@@ -1,19 +1,17 @@
 package handler_test
 
 import (
-	"backend/internal/contexthelper"
 	"backend/internal/handler"
 	"bytes"
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
+
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"golang.org/x/crypto/bcrypt"
-	"time"
 )
 
 func TestLoginHandler_Success(t *testing.T) {
@@ -24,7 +22,7 @@ func TestLoginHandler_Success(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	// Hash password for test
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
@@ -49,11 +47,13 @@ func TestLoginHandler_Success(t *testing.T) {
 		"password": "password123",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	req = req.WithContext(ctx)
 
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/login",
+		bytes.NewBuffer(body),
+		TestDeps{DB: db},
+	)
 
 	// Execute
 	h.LoginHandler(rr, req)
@@ -77,76 +77,62 @@ func TestLoginHandler_Success(t *testing.T) {
 }
 
 func TestLoginHandler_InvalidJSON(t *testing.T) {
-	db, _, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
+	h := handler.NewHandler()
 
-	h := handler.NewHandler(db, nil)
-
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBufferString("invalid json"))
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/login",
+		bytes.NewBufferString("invalid json"),
+		TestDeps{},
+	)
 
 	h.LoginHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("expected status 400, got %d", resp.StatusCode)
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", rr.Code)
 	}
 }
 
 func TestLoginHandler_EmptyEmail(t *testing.T) {
-	db, _, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	reqBody := map[string]string{
 		"password": "password123",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
 
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/login",
+		bytes.NewBuffer(body),
+		TestDeps{},
+	)
 	h.LoginHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("expected status 401, got %d", resp.StatusCode)
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d", rr.Code)
 	}
 }
 
 func TestLoginHandler_EmptyPassword(t *testing.T) {
-	db, _, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	defer db.Close()
-
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	reqBody := map[string]string{
 		"email": "test@example.com",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/login",
+		bytes.NewBuffer(body),
+		TestDeps{},
+	)
 
 	h.LoginHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("expected status 401, got %d", resp.StatusCode)
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d", rr.Code)
 	}
 }
 
@@ -157,7 +143,7 @@ func TestLoginHandler_InvalidCredentials(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	// Mock user not found
 	mock.ExpectQuery("SELECT.*FROM users").WillReturnError(sql.ErrNoRows)
@@ -167,16 +153,17 @@ func TestLoginHandler_InvalidCredentials(t *testing.T) {
 		"password": "wrongpassword",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/login",
+		bytes.NewBuffer(body),
+		TestDeps{DB: db},
+	)
 
 	h.LoginHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("expected status 401, got %d", resp.StatusCode)
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d", rr.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -191,7 +178,7 @@ func TestLoginHandler_WrongPassword(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
+	h := handler.NewHandler()
 
 	// Hash password for test
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("correctpassword"), bcrypt.DefaultCost)
@@ -209,16 +196,17 @@ func TestLoginHandler_WrongPassword(t *testing.T) {
 		"password": "wrongpassword",
 	}
 	body, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
-	rr := httptest.NewRecorder()
+	req, rr := NewTestRequest(
+		http.MethodPost,
+		"/login",
+		bytes.NewBuffer(body),
+		TestDeps{DB: db},
+	)
 
 	h.LoginHandler(rr, req)
 
-	resp := rr.Result()
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusUnauthorized {
-		t.Errorf("expected status 401, got %d", resp.StatusCode)
+	if rr.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d", rr.Code)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

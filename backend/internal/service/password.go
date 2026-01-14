@@ -1,8 +1,8 @@
 package service
 
 import (
-	"backend/config"
 	"backend/internal/apperrors"
+	"backend/internal/contexthelper"
 	"backend/internal/queue"
 	"backend/internal/repository"
 	"backend/pkg/logger"
@@ -12,7 +12,6 @@ import (
 	"math/rand"
 	"time"
 
-	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,7 +26,7 @@ func NewPasswordService(confirmationTokenRepo *repository.ConfirmationTokenRepos
 		userRepo:              userRepo,
 	}
 }
-func (s *PasswordService) ResetPassword(ctx context.Context, rabbitConn *amqp.Connection, email string) error {
+func (s *PasswordService) ResetPassword(ctx context.Context, email string) error {
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		logger.ErrorCtx(ctx, "Failed to get user by email: %v", err)
@@ -40,15 +39,13 @@ func (s *PasswordService) ResetPassword(ctx context.Context, rabbitConn *amqp.Co
 		return err
 	}
 
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return err
-	}
+	cfg := contexthelper.GetConfig(ctx)
 
 	confirmationToken, err := s.confirmationTokenRepo.CreatePasswordChangeToken(ctx, user.Id, cfg.ResetPassword.ExpirationDays)
 	if err != nil {
 		return err
 	}
+	rabbitConn := contexthelper.GetRabbitConn(ctx)
 	err = queue.PublishPasswordResetTask(ctx, rabbitConn, confirmationToken)
 	if err != nil {
 		logger.ErrorCtx(ctx, "Failed to enqueue password reset task: %v", err)

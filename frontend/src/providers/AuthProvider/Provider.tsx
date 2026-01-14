@@ -1,39 +1,32 @@
 import React, {useState, useEffect, useRef} from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { useLang } from '../LangProvider'
-import { AuthContext } from './Context'
-import { api, setLogoutHandler, setTokenRefresher, logoutReasonCodes } from '@/api';
-import {
-    clearToken,
-    getRememberMeFlag,
-    getToken,
-    saveToken,
-    isLoggedIn,
-} from './auth';
+import {useNavigate} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
+import {useLang} from '../LangProvider'
+import {AuthContext} from './Context'
+import {api, setLogoutHandler, logoutReasonCodes, type ApiSuccessResponse} from '@/api';
 import type {MeResponse} from './types';
 import type {UserType} from '@/types';
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const { t } = useTranslation();
-    const [token, setToken] = useState<string | null>(null);
-    const [user, setUser] = useState<UserType | null>(null);
+import {setSuccessHandler} from "@/api/apiClient.ts";
+
+export function AuthProvider({children}: { children: React.ReactNode }) {
+    const {t} = useTranslation();
+    const [appUser, setAppUser] = useState<UserType | null>(null);
     const navigate = useNavigate();
     const [meInProgress, setMeInProgress] = useState<boolean>(true);
     const refreshTimeout = useRef<number | null>(null);
 
-    const { changeLang } = useLang();
+    const {changeLang} = useLang();
+
+    const appUserRef = useRef<UserType | null>(null);
+
+    useEffect(() => {
+        appUserRef.current = appUser;
+    }, [appUser]);
 
     useEffect(() => {
         setLogoutHandler(logout);
-        setTokenRefresher(setLoginToken);
-
-        // Ładuj z localStorage przy starcie aplikacji
-        const storedToken = getToken();
-        if (storedToken) {
-            fetchMe().finally(() => setMeInProgress(false));
-        } else {
-            setMeInProgress(false);
-        }
+        setSuccessHandler(apiSuccessResponseHandler)
+        fetchMe().finally(() => setMeInProgress(false));
         return () => {
             if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
         };
@@ -41,76 +34,89 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const fetchMe = async () => {
         try {
-            const resp = await api.get<MeResponse>('/me');
-            if (resp?.token) setLoginToken(resp.token);
-            if (resp?.data?.user) setUser(resp.data.user);
+            await api.get<MeResponse>('/me', false).then(({data}) => {
+                setLoginUser(data.user);
+            });
         } catch (err) {
             console.error('Refresh /me failed', err);
-            logout(logoutReasonCodes.SESSION_EXPIRED);
+            if(appUserRef.current) {
+                logout(logoutReasonCodes.SESSION_EXPIRED);
+            }
         }
     };
-    const scheduleMeRefresh = () => {
-        // Czyścimy poprzedni timeout (jeśli istnieje)
+    const clearRefreshTimeout = () => {
         if (refreshTimeout.current) {
             clearTimeout(refreshTimeout.current);
         }
-        if (isLoggedIn()) {
-            // ustawiamy kolejne wywołanie /me po 5 minutach (300_000 ms)
-            refreshTimeout.current = window.setTimeout(async () => {
-                try {
-                    await fetchMe();
-                } finally {
-                    // ustawiamy kolejny timeout tylko jeśli jeszcze nie został zresetowany przez setLoginToken
+    }
+    const apiSuccessResponseHandler = () => {
+        if (appUserRef.current) {
+            scheduleMeRefresh();
+        }
+    }
+    const scheduleMeRefresh = () => {
+
+        // Clear previous timeout if exists
+        clearRefreshTimeout()
+        // set next call /me request after 5 minutes (300_000 ms)
+        refreshTimeout.current = window.setTimeout(async () => {
+            try {
+                await fetchMe();
+            } finally {
+                if(appUserRef.current) {
                     scheduleMeRefresh();
                 }
-            }, 300_000);
-        }
+            }
+        }, 30_000);
     };
 
-    const setLoginUser = (user:UserType|null) => {
-        setUser(user);
+    const setLoginUser = (user: UserType | null) => {
+        setAppUser(user);
         const lang = user?.settings?.language;
         if (lang) {
             changeLang(lang);
         }
-    };
-    const setLoginToken = (token:string) => {
-        setToken(token);
-        const rememberMe = getRememberMeFlag();
-        saveToken(token, rememberMe);
-        // reset timer po każdym odświeżeniu tokena
-        if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
-        scheduleMeRefresh();
+        if (user) {
+            scheduleMeRefresh();
+        } else {
+            clearRefreshTimeout()
+        }
     };
 
-    const logout = (REASON_CODE:string) => {
-        setToken(null);
-        setUser(null);
-        clearToken();
+    const logout = (REASON_CODE: string) => {
+        if(!appUserRef.current){
+            return
+        }
+        clearRefreshTimeout();
+        setAppUser(null);
         let state = {};
 
         switch (REASON_CODE) {
             case logoutReasonCodes.SESSION_EXPIRED:
-                state = { message: t('global.session_expired'), type: 'error' };
+                state = {message: t('global.session_expired'), type: 'error'};
                 break;
             case logoutReasonCodes.USER_LOGGED_OUT:
-                state = { message: t('global.logout_success'), type: 'success' };
+                state = {message: t('global.logout_success'), type: 'success'};
                 break;
             default:
-                state = { message: t('global.unknown_error'), type: 'error' };
+                state = {message: t('global.unknown_error'), type: 'error'};
                 break;
         }
-        navigate('/login', state);
+        try {
+            api.get<ApiSuccessResponse>('/logout').then(() => {
+                navigate('/login', state);
+            });
+        } catch (err) {
+            console.error('Logout failed', err);
+        }
     };
 
     return (
         <AuthContext.Provider
             value={{
-                token,
                 setLoginUser,
-                setLoginToken,
                 logout,
-                user,
+                appUser,
                 meInProgress,
             }}
         >

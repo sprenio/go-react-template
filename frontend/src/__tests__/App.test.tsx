@@ -63,9 +63,7 @@ describe('When not authenticated', () => {
         ({RegisterLinkFlag, ResetPasswordLinkFlag}) => {
             renderWithProviders(<App/>, {
                 auth: {
-                    token: '',
                     setLoginUser: vi.fn(),
-                    setLoginToken: vi.fn(),
                     logout: vi.fn(),
                     user: null,
                     meInProgress: false
@@ -122,9 +120,7 @@ test('shows dashboard when authenticated', async () => {
     renderWithProviders(<App/>, {
         route: '/dashboard',
         auth: {
-            token: 'mock-token',
             setLoginUser: vi.fn(),
-            setLoginToken: vi.fn(),
             logout: vi.fn(),
             user: null,
             meInProgress: false

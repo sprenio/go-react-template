@@ -32,29 +32,29 @@ function getAppSettings(user: UserType | null): AppSettingsType {
 
 export default function Settings() {
     const [activeSection, setActiveSection] = useState('profile');
-    const {user, setLoginUser} = useAuth();
+    const {appUser, setLoginUser} = useAuth();
     const settingsMutation = useSettings();
     const emailChangeMutation = useEmailChange();
 
     const {changeLang} = useLang();
-    const [initUserSettings, setInitUserSettings] = useState(getUserSettings(user));
+    const [initUserSettings, setInitUserSettings] = useState(getUserSettings(appUser));
 
-    const [initAppSettings, setInitAppSettings] = useState(getAppSettings(user));
-    if (!user) {
+    const [initAppSettings, setInitAppSettings] = useState(getAppSettings(appUser));
+    if (!appUser) {
         return (<NotFound/>)
     }
     const handleSettingsSave = (settings: UserSettingsType | AppSettingsType) => {
-        if (!user) {
+        if (!appUser) {
             return
         }
-        const newSettings = {...defSettings, ...user.settings, ...settings};
+        const newSettings = {...defSettings, ...appUser.settings, ...settings};
         settingsMutation.mutate(
             newSettings,
             {
                 onSuccess: (resp) => {
                     toastSuccess(resp.code);
-                    const langChanged = newSettings.language !== user.settings?.language;
-                    const updatedUser = {...user, settings: newSettings};
+                    const langChanged = newSettings.language !== appUser.settings?.language;
+                    const updatedUser = {...appUser, settings: newSettings};
                     setLoginUser(updatedUser);
                     if (langChanged) {
                         changeLang(newSettings.language);
@@ -136,7 +136,7 @@ export default function Settings() {
                             <Card title={t('settings.profile')}>
                                 <UserSettingsForm
                                     userSettings={initUserSettings}
-                                    user={user}
+                                    user={appUser}
                                     onSubmit={handleSettingsSave}
                                 />
                             </Card>
@@ -150,7 +150,7 @@ export default function Settings() {
 
                         {activeSection === 'email' && (
                             <Card title={t('settings.email_change')}>
-                                <EmailChangeForm onSubmit={handleEmailChange} email={user?.email}/>
+                                <EmailChangeForm onSubmit={handleEmailChange} email={appUser?.email}/>
                             </Card>
                         )}
                     </div>

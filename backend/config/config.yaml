@@ -23,3 +23,7 @@ reset_password:
 email_change:
   expiration_days: 1
 
+token:
+  jwt_secret: "supersecuresecretkey"
+  access_token_ttl_minutes: 10
+  refresh_token_ttl_days: 30

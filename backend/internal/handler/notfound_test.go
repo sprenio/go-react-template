@@ -1,14 +1,10 @@
 package handler_test
 
 import (
-	"backend/internal/contexthelper"
 	"backend/internal/handler"
-	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
-
 	"github.com/DATA-DOG/go-sqlmock"
 )
 
@@ -19,13 +15,13 @@ func TestNotFoundHandler(t *testing.T) {
 	}
 	defer db.Close()
 
-	h := handler.NewHandler(db, nil)
-
-	req := httptest.NewRequest(http.MethodGet, "/nonexistent", nil)
-	ctx := context.WithValue(req.Context(), contexthelper.RequestIDKey, "test-id-123")
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
+	h := handler.NewHandler()
+	req, rr := NewTestRequest(
+		http.MethodGet,
+		"/nonexistent",
+		nil,
+		TestDeps{},
+	)
 
 	h.NotFoundHandler(rr, req)
 

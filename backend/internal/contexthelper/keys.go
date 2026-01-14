@@ -1,9 +1,19 @@
 package contexthelper
 
-type contextKey string
+type requestIdKeyType struct{}
+type userIdKeyType struct{}
+type configKeyType struct{}
+type clientIpKeyType struct{}
+type dbKeyType struct{}
+type rabbitKeyType struct{}
+type accessTokenDataCtxKeyType struct{}
 
-const (
-	RequestIDKey contextKey = "requestID"
-	UserIdKey    contextKey = "userID"
-	// w przyszłości np. UserIDKey, SessionIDKey itd.
+var (
+	requestIdCtxKey       = requestIdKeyType{}
+	userIdCtxKey          = userIdKeyType{}
+	configCtxKey          = configKeyType{}
+	clientIpCtxKey        = clientIpKeyType{}
+	dbCtxKey              = dbKeyType{}
+	rabbitCtxKey          = rabbitKeyType{}
+	accessTokenDataCtxKey = accessTokenDataCtxKeyType{}
 )

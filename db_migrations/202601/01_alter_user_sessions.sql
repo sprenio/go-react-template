@@ -1,0 +1,2 @@
+ALTER TABLE `user_sessions` CHANGE `created_date` `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, CHANGE `expires_date` `expires_at` TIMESTAMP NOT NULL, CHANGE `revoked` `revoked_at` TIMESTAMP NULL DEFAULT NULL;
+ALTER TABLE `user_sessions` ADD `refreshed_at` TIMESTAMP NULL DEFAULT NULL AFTER `expires_at`, ADD `user_agent` VARCHAR(255) NOT NULL AFTER `revoked_at`, ADD `ip` VARBINARY(16) NOT NULL AFTER `user_agent`;

@@ -35,6 +35,7 @@ func init() {
 		emailChangeCodeDescriptions,
 		passwordResetCodeDescriptions,
 		passwordChangeCodeDescriptions,
+		logoutCodeDescriptions,
 		// Add other code maps here
 
 		// general errors at the end to override any duplicates

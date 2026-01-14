@@ -6,42 +6,16 @@ import (
 	"net/http"
 	"time"
 
-	"backend/config"
 	"backend/internal/apicodes"
 	"backend/internal/contexthelper"
+	"backend/internal/cookie"
+	"backend/internal/repository"
 	"backend/pkg/logger"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
-type apiTokenResponse interface {
-	GenerateToken(ctx context.Context)
-}
-
 type msgResponse struct {
-	Token   string `json:"token,omitempty"`
 	Code    int    `json:"code"`
 	Message string `json:"message"`
-}
-
-func (r *msgResponse) GenerateToken(ctx context.Context) {
-
-	userID, ok := contexthelper.GetUserId(ctx)
-
-	if !ok || userID == 0 {
-		if !ok {
-			logger.WarnCtx(ctx, "Failed to get user id from context")
-		}
-		r.Token = ""
-		return
-	}
-	token, err := generateJWT(userID)
-	if err != nil {
-		logger.WarnCtx(ctx, "Failed to generate JWT token: %v", err)
-		r.Token = ""
-	} else {
-		r.Token = token
-	}
 }
 
 type errorResponse struct {
@@ -55,11 +29,6 @@ type successResponse struct {
 type invalidInputValueResponse struct {
 	errorResponse
 	InvalidField string `json:"invalid_field,omitempty"`
-}
-
-type Claims struct {
-	UserID uint `json:"user_id"`
-	jwt.RegisteredClaims
 }
 
 func SuccessResponse(w http.ResponseWriter, ctx context.Context) {
@@ -120,9 +89,8 @@ func apiResponse(w http.ResponseWriter, status int, response any) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func apiSuccessResponse(w http.ResponseWriter, ctx context.Context, response apiTokenResponse) {
-
-	response.GenerateToken(ctx)
+func apiSuccessResponse(w http.ResponseWriter, ctx context.Context, response any) {
+	setUserAccessCookies(ctx, w)
 	apiResponse(w, http.StatusOK, response)
 }
 func apiErrorResponse(w http.ResponseWriter, status int, code int) {
@@ -155,15 +123,35 @@ func getMsgResponse(code int) msgResponse {
 	}
 }
 
-func generateJWT(userID uint) (string, error) {
-	claims := &Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.TokenTTL)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
+func setUserAccessCookies(ctx context.Context, w http.ResponseWriter) {
+	accessTokenData, ctx := contexthelper.GetAccessTokenData(ctx)
+	logger.DebugCtx(ctx, "AccessTokenData: %v", accessTokenData)
+	if !accessTokenData.SetCookies {
+		return
+	}
+	if accessTokenData.UserId > 0 {
+		cookie.SetAccessToken(ctx, w, accessTokenData.UserId)
+	}
+	if accessTokenData.RefreshToken != "" {
+		db := contexthelper.GetDb(ctx)
+		sessionRepo := repository.NewUserSessionsRepository(db)
+
+		// Calculate TTL for refresh token
+		cfg := contexthelper.GetConfig(ctx)
+		ttl := time.Hour * 24 * time.Duration(int64(cfg.Token.RefreshTokenTtlDays))
+		expiresAt := time.Now().Add(ttl)
+		ttlSeconds := int(ttl / time.Second)
+
+		// Refresh token in database
+		err := sessionRepo.RefreshToken(ctx, accessTokenData.UserId, accessTokenData.RefreshToken, expiresAt)
+		if err != nil {
+			logger.ErrorCtx(ctx, "Refresh token failed: %v", err)
+			cookie.DeleteRefreshToken(ctx, w)
+			return
+		}
+
+		// Set refresh token cookie
+		cookie.SetRefreshToken(w, ctx, accessTokenData.RefreshToken, ttlSeconds)
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(config.JWTSecret)
 }

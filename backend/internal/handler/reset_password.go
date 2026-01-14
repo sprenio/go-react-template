@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"backend/internal/contexthelper"
 	"backend/internal/repository"
 	"backend/internal/response"
 	"backend/internal/service"
@@ -28,11 +29,12 @@ func (h *Handler) ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uRepo := repository.NewUserRepository(h.db)
-	ctRepo := repository.NewConfirmationTokenRepository(h.db)
+	db := contexthelper.GetDb(ctx)
+	uRepo := repository.NewUserRepository(db)
+	ctRepo := repository.NewConfirmationTokenRepository(db)
 
 	service := service.NewPasswordService(ctRepo, uRepo)
-	err := service.ResetPassword(ctx, h.rabbitConn, req.Email)
+	err := service.ResetPassword(ctx, req.Email)
 
 	if err != nil {
 		logger.ErrorCtx(ctx, "Reset password failed: %v", err)

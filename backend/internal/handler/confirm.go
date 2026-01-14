@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"backend/internal/contexthelper"
 	"backend/internal/models"
 	"backend/internal/repository"
 	"backend/internal/response"
@@ -18,21 +19,22 @@ import (
 func (h *Handler) ConfirmHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	token := chi.URLParam(r, "token")
-	logger.DebugCtx(ctx, "ConfirmHandler called with token: %s", token)
+	logger.InfoCtx(ctx, "ConfirmHandler called with token: %s", token)
 	if token == "" {
 		logger.WarnCtx(ctx, "Empty confirmation token provided")
 		response.NotFoundErrorResponse(w)
 		return
 	}
+	db := contexthelper.GetDb(ctx)
 
-	ctRepo := repository.NewConfirmationTokenRepository(h.db)
+	ctRepo := repository.NewConfirmationTokenRepository(db)
 	if ctRepo == nil {
 		response.InternalServerError(w)
 		return
 	}
 	ct, err := ctRepo.GetActiveNewToken(ctx, token)
 	if err != nil || ct.Id == 0 {
-		logger.DebugCtx(ctx, "No active confirmation token found", "token", token, "error", err)
+		logger.WarnCtx(ctx, "No active confirmation token found", "token", token, "error", err)
 		response.NotFoundErrorResponse(w)
 		return
 	}
@@ -65,7 +67,8 @@ func (h *Handler) ConfirmHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) confirmRegisterHandler(ctx context.Context, ct models.ConfirmationToken) error {
-	tx, err := h.db.BeginTx(ctx, nil)
+	db := contexthelper.GetDb(ctx)
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to begin transaction")
 	}
@@ -89,8 +92,8 @@ func (h *Handler) confirmRegisterHandler(ctx context.Context, ct models.Confirma
 	return nil
 }
 func (h *Handler) confirmEmailChangeHandler(ctx context.Context, ct models.ConfirmationToken) error {
-
-	uRepo := repository.NewUserRepository(h.db)
+	db := contexthelper.GetDb(ctx)
+	uRepo := repository.NewUserRepository(db)
 	service := service.NewUserService(uRepo)
 	err := service.ConfirmEmailChangeToken(ctx, ct)
 	if err != nil {
@@ -99,9 +102,9 @@ func (h *Handler) confirmEmailChangeHandler(ctx context.Context, ct models.Confi
 	return nil
 }
 func (h *Handler) passwordChangeHandler(ctx context.Context, ct models.ConfirmationToken, newPassword string) error {
-
-	uRepo := repository.NewUserRepository(h.db)
-	ctRepo := repository.NewConfirmationTokenRepository(h.db)
+	db := contexthelper.GetDb(ctx)
+	uRepo := repository.NewUserRepository(db)
+	ctRepo := repository.NewConfirmationTokenRepository(db)
 	service := service.NewPasswordService(ctRepo, uRepo)
 	err := service.PasswordChange(ctx, ct.UserId, newPassword)
 	if err != nil {
