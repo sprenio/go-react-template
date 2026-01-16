@@ -37,8 +37,12 @@ func main() {
 	appCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	appCtx = contexthelper.SetServices(appCtx, db, rabbitConn)
+	appCtx = contexthelper.SetConfig(appCtx, cfg)
+	appCtx = contexthelper.SetRequestID(appCtx, "consumer")
+
 	logger.Info("🚀 Starting consumers...")
-	c := queue.NewConsumer(db, rabbitConn)
+	c := queue.NewConsumer()
 
 	// Warto dodać, żeby consumer dostał kontekst (zatrzyma się na cancel)
 	go func() {

@@ -2,7 +2,6 @@ package email
 
 import (
 	"backend/assets"
-	"backend/config"
 	"backend/internal/contexthelper"
 	"backend/locale"
 	"backend/pkg/logger"
@@ -34,21 +33,19 @@ type EmailSender struct {
 	username    string
 	password    string
 	from        string
+	fromName    string
 	embedImages []embedImage
-	cfg config.Config
 }
 
 //go:embed templates/*.html
 var templateFiles embed.FS
 
 func GetEmailSender(ctx context.Context) *EmailSender {
-
-	cfg := contexthelper.GetConfig(ctx)
-	return newEmailSender(cfg)
+	return newEmailSender(ctx)
 }
 
-func newEmailSender(cfg *config.Config) *EmailSender {
-
+func newEmailSender(ctx context.Context) *EmailSender {
+	cfg := contexthelper.GetConfig(ctx)
 	var intPort int
 	fmt.Sscanf(cfg.Email.SMTPPort, "%d", &intPort)
 	return &EmailSender{
@@ -56,7 +53,8 @@ func newEmailSender(cfg *config.Config) *EmailSender {
 		smtpPort: intPort,
 		username: cfg.Email.Username,
 		password: cfg.Email.Password,
-		from:     cfg.AppName + " <" + cfg.Email.From + ">",
+		from:     cfg.Email.From,
+		fromName: cfg.AppName,
 	}
 }
 
@@ -69,11 +67,15 @@ func (es *EmailSender) AddEmbedImage(contentID, contentType, filePath, fileName 
 	})
 }
 
-func (es *EmailSender) SendHtmlEmail(to, subject, htmlContent, PageTitle, pageHeader, HeadExtra string) error {
+func (es *EmailSender) SendHtmlEmail(ctx context.Context, to, subject, htmlContent, PageTitle, pageHeader, HeadExtra string) error {
 	var htmlBody bytes.Buffer
 
 	m := mail.NewMessage()
-	m.SetHeader("From", es.from)
+	m.SetAddressHeader(
+		"From",
+		es.from,
+		es.fromName,
+	)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
 
@@ -85,10 +87,10 @@ func (es *EmailSender) SendHtmlEmail(to, subject, htmlContent, PageTitle, pageHe
 	randGen := rand.New(rand.NewSource(time.Now().UnixNano())) // lokalny generator
 	num := randGen.Intn(900000) + 100000                       // losowa liczba 100000–999999
 	logoCID := fmt.Sprintf("logoCID%d", num)
-
+	cfg := contexthelper.GetConfig(ctx)
 	err = tmpl.Execute(&htmlBody, map[string]interface{}{
 		"PageTitle": PageTitle,
-		"AppName":   es.cfg.AppName,
+		"AppName":   cfg.AppName,
 		"logoCID":   logoCID,
 		"HeadExtra": HeadExtra,
 		"Header":    pageHeader,
@@ -126,8 +128,8 @@ func (es *EmailSender) SendHtmlEmail(to, subject, htmlContent, PageTitle, pageHe
 	return d.DialAndSend(m)
 }
 
-func (es *EmailSender) SendWelcomeEmail(to, userName, langCode, confirmationLink string) error {
-	logger.Info("Preparing to send welcome email to %s in language %s", to, langCode)
+func (es *EmailSender) SendWelcomeEmail(ctx context.Context, to, userName, langCode, confirmationLink string) error {
+	logger.InfoCtx(ctx, "Preparing to send welcome email to %s in language %s", to, langCode)
 	loc := locale.GetNewLocalizer(langCode)
 	// Fallback do EN jeśli brak tłumaczenia
 
@@ -136,33 +138,33 @@ func (es *EmailSender) SendWelcomeEmail(to, userName, langCode, confirmationLink
 	if err != nil {
 		return errors.Wrap(err, "parse welcome email template")
 	}
-
+	cfg := contexthelper.GetConfig(ctx)
 	var htmlContent bytes.Buffer
 	err = tmpl.Execute(&htmlContent, map[string]interface{}{
 		"Hello":            template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.hello_user", TemplateData: map[string]string{"UserName": userName}})),
-		"ThankYouAndClick": template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.thank_you_and_click", TemplateData: map[string]string{"AppName": es.cfg.AppName}})),
+		"ThankYouAndClick": template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.thank_you_and_click", TemplateData: map[string]string{"AppName": cfg.AppName}})),
 		"ConfirmationLink": confirmationLink,
 		"ConfirmEmail":     template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.confirm_email"})),
 		"IfButtonFails":    template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.if_button_fails"})),
-		"LinkExpiryInfo":   template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.link_expiry_info", TemplateData: map[string]int{"ExpiryDays": es.cfg.Register.ExpirationDays}, PluralCount: es.cfg.Register.ExpirationDays})),
+		"LinkExpiryInfo":   template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.link_expiry_info", TemplateData: map[string]int{"ExpiryDays": cfg.Register.ExpirationDays}, PluralCount: cfg.Register.ExpirationDays})),
 		"IfNotYou":         template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.if_not_you"})),
-		"BestRegards":      template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.best_regards", TemplateData: map[string]string{"AppName": es.cfg.AppName}})),
+		"BestRegards":      template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.best_regards", TemplateData: map[string]string{"AppName": cfg.AppName}})),
 	})
 
 	if err != nil {
 		return errors.Wrap(err, "execute welcome email template")
 	}
 
-	subject := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.subject", TemplateData: map[string]string{"AppName": es.cfg.AppName}})
+	subject := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.subject", TemplateData: map[string]string{"AppName": cfg.AppName}})
 	pageTitle := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.page_title"})
-	pageHeader := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.page_header", TemplateData: map[string]string{"AppName": es.cfg.AppName}})
-	if err := es.SendHtmlEmail(to, subject, htmlContent.String(), pageTitle, pageHeader, ""); err != nil {
+	pageHeader := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "welcome.page_header", TemplateData: map[string]string{"AppName": cfg.AppName}})
+	if err := es.SendHtmlEmail(ctx, to, subject, htmlContent.String(), pageTitle, pageHeader, ""); err != nil {
 		return errors.Wrap(err, "send email")
 	}
 	return nil
 }
 
-func (es *EmailSender) SendEmailChangeEmail(to, userName, confirmationLink string) error {
+func (es *EmailSender) SendEmailChangeEmail(ctx context.Context, to, userName, confirmationLink string) error {
 	loc := locale.GetNewLocalizer("pl")
 	// Fallback do EN jeśli brak tłumaczenia
 
@@ -171,7 +173,7 @@ func (es *EmailSender) SendEmailChangeEmail(to, userName, confirmationLink strin
 	if err != nil {
 		return errors.Wrap(err, "parse email change email template")
 	}
-
+	cfg := contexthelper.GetConfig(ctx)
 	var htmlContent bytes.Buffer
 	err = tmpl.Execute(&htmlContent, map[string]interface{}{
 		"Hello":                   template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.hello_user", TemplateData: map[string]string{"UserName": userName}})),
@@ -180,25 +182,25 @@ func (es *EmailSender) SendEmailChangeEmail(to, userName, confirmationLink strin
 		"PleaseConfirmNewEmail":   template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.please_confirm_new_email"})),
 		"ConfirmNewEmail":         template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.confirm_new_email"})),
 		"IfButtonFails":           template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.if_button_fails"})),
-		"LinkExpiryInfo":          template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.link_expiry_info", TemplateData: map[string]int{"ExpiryDays": es.cfg.Register.ExpirationDays}, PluralCount: es.cfg.Register.ExpirationDays})),
+		"LinkExpiryInfo":          template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.link_expiry_info", TemplateData: map[string]int{"ExpiryDays": cfg.Register.ExpirationDays}, PluralCount: cfg.Register.ExpirationDays})),
 		"IfNotYouEmailChange":     template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.if_not_you_email_change"})),
-		"BestRegards":             template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.best_regards", TemplateData: map[string]string{"AppName": es.cfg.AppName}})),
+		"BestRegards":             template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.best_regards", TemplateData: map[string]string{"AppName": cfg.AppName}})),
 	})
 
 	if err != nil {
 		return errors.Wrap(err, "execute welcome email template")
 	}
 
-	subject := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.subject", TemplateData: map[string]string{"AppName": es.cfg.AppName}})
+	subject := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.subject", TemplateData: map[string]string{"AppName": cfg.AppName}})
 	pageTitle := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.page_title"})
-	pageHeader := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.page_header", TemplateData: map[string]string{"AppName": es.cfg.AppName}})
-	if err := es.SendHtmlEmail(to, subject, htmlContent.String(), pageTitle, pageHeader, ""); err != nil {
+	pageHeader := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "email_change.page_header", TemplateData: map[string]string{"AppName": cfg.AppName}})
+	if err := es.SendHtmlEmail(ctx, to, subject, htmlContent.String(), pageTitle, pageHeader, ""); err != nil {
 		return errors.Wrap(err, "send email")
 	}
 	return nil
 }
 
-func (es *EmailSender) SendPasswordResetEmail(to, userName, resetLink string) error {
+func (es *EmailSender) SendPasswordResetEmail(ctx context.Context, to, userName, resetLink string) error {
 	loc := locale.GetNewLocalizer("pl")
 
 	// Wygeneruj HTML z szablonu
@@ -206,7 +208,7 @@ func (es *EmailSender) SendPasswordResetEmail(to, userName, resetLink string) er
 	if err != nil {
 		return errors.Wrap(err, "parse password reset email template")
 	}
-
+	cfg := contexthelper.GetConfig(ctx)
 	var htmlContent bytes.Buffer
 	err = tmpl.Execute(&htmlContent, map[string]interface{}{
 		"Hello":          template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.hello_user", TemplateData: map[string]string{"UserName": userName}})),
@@ -215,19 +217,19 @@ func (es *EmailSender) SendPasswordResetEmail(to, userName, resetLink string) er
 		"PleaseReset":    template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.please_reset"})),
 		"ResetPassword":  template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.reset_password"})),
 		"IfButtonFails":  template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.if_button_fails"})),
-		"LinkExpiryInfo": template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.link_expiry_info", TemplateData: map[string]int{"ExpiryDays": es.cfg.ResetPassword.ExpirationDays}, PluralCount: es.cfg.ResetPassword.ExpirationDays})),
+		"LinkExpiryInfo": template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.link_expiry_info", TemplateData: map[string]int{"ExpiryDays": cfg.ResetPassword.ExpirationDays}, PluralCount: cfg.ResetPassword.ExpirationDays})),
 		"IfNotYou":       template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.if_not_you"})),
-		"BestRegards":    template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.best_regards", TemplateData: map[string]string{"AppName": es.cfg.AppName}})),
+		"BestRegards":    template.HTML(loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "general.best_regards", TemplateData: map[string]string{"AppName": cfg.AppName}})),
 	})
 
 	if err != nil {
 		return errors.Wrap(err, "execute password reset email template")
 	}
 
-	subject := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.subject", TemplateData: map[string]string{"AppName": es.cfg.AppName}})
+	subject := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.subject", TemplateData: map[string]string{"AppName": cfg.AppName}})
 	pageTitle := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.page_title"})
-	pageHeader := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.page_header", TemplateData: map[string]string{"AppName": es.cfg.AppName}})
-	if err := es.SendHtmlEmail(to, subject, htmlContent.String(), pageTitle, pageHeader, ""); err != nil {
+	pageHeader := loc.MustLocalize(&i18n.LocalizeConfig{MessageID: "password_reset.page_header", TemplateData: map[string]string{"AppName": cfg.AppName}})
+	if err := es.SendHtmlEmail(ctx, to, subject, htmlContent.String(), pageTitle, pageHeader, ""); err != nil {
 		return errors.Wrap(err, "send email")
 	}
 	return nil

@@ -39,7 +39,7 @@ type PasswordResetEmailData struct {
 }
 
 func (c *Consumer) HandleEmailTask(ctx context.Context, task string, rawMessage json.RawMessage) error {
-	logger.Info("📧 starting handling email task: %s", task)
+	logger.InfoCtx(ctx, "📧 starting handling email task: %s", task)
 
 	switch task {
 	case registerEmailTask:
@@ -58,10 +58,10 @@ func (c *Consumer) HandleEmailTask(ctx context.Context, task string, rawMessage 
 			return err
 		}
 	default:
-		logger.Error("❌ Unknown email task: %s", task)
+		logger.ErrorCtx(ctx, "❌ Unknown email task: %s", task)
 		return errors.New("unknown email task")
 	}
-	logger.Info("✅ Email task handled successfully")
+	logger.InfoCtx(ctx, "✅ Email task handled successfully")
 	return nil
 }
 
@@ -78,7 +78,8 @@ func (c *Consumer) sendWelcomeEmail(ctx context.Context, rawMessage json.RawMess
 	if data.RegisterToken == "" {
 		return errors.New("empty register token")
 	}
-	confirmationRepo := repository.NewConfirmationTokenRepository(c.db)
+	db := contexthelper.GetDb(ctx)
+	confirmationRepo := repository.NewConfirmationTokenRepository(db)
 	ct, err := confirmationRepo.GetActiveNewTokenWithType(ctx, data.RegisterToken, models.ConfirmationTokenTypeRegister)
 	if err != nil {
 		return err
@@ -94,14 +95,14 @@ func (c *Consumer) sendWelcomeEmail(ctx context.Context, rawMessage json.RawMess
 		return err
 	}
 	if payloadData.Email == "" {
-		logger.Error("Invalid email data")
+		logger.ErrorCtx(ctx, "Invalid email data")
 		return errors.New("invalid email data")
 	}
 	cfg := contexthelper.GetConfig(ctx)
-	langRepo := repository.NewLanguageRepository(c.db)
+	langRepo := repository.NewLanguageRepository(db)
 	lang, err := langRepo.GetById(ctx, payloadData.LanguageId)
 	if err != nil {
-		logger.Error("Failed to get language by id: %d, error: %v", payloadData.LanguageId, err)
+		logger.ErrorCtx(ctx, "Failed to get language by id: %d, error: %v", payloadData.LanguageId, err)
 	}
 	langCode := cfg.DefaultLanguage
 	if lang.I18nCode > "" {
@@ -109,11 +110,11 @@ func (c *Consumer) sendWelcomeEmail(ctx context.Context, rawMessage json.RawMess
 	}
 
 	link := fmt.Sprintf("%s/confirm/%s", cfg.Frontend.BaseURL, data.RegisterToken)
-	err = sender.SendWelcomeEmail(payloadData.Email, payloadData.Name, langCode, link)
+	err = sender.SendWelcomeEmail(ctx, payloadData.Email, payloadData.Name, langCode, link)
 	if err != nil {
 		return err
 	}
-	logger.Info("Email sent to %s", payloadData.Email)
+	logger.InfoCtx(ctx, "Email sent to %s", payloadData.Email)
 	return nil
 }
 
@@ -126,8 +127,8 @@ func (c *Consumer) sendEmailChangeEmail(ctx context.Context, rawMessage json.Raw
 	if data.EmailChangeToken == "" {
 		return errors.New("empty email change token")
 	}
-
-	confirmationRepo := repository.NewConfirmationTokenRepository(c.db)
+	db := contexthelper.GetDb(ctx)
+	confirmationRepo := repository.NewConfirmationTokenRepository(db)
 	ct, err := confirmationRepo.GetActiveNewTokenWithType(ctx, data.EmailChangeToken, models.ConfirmationTokenTypeEmailChange)
 	if err != nil {
 		return err
@@ -146,12 +147,13 @@ func (c *Consumer) sendEmailChangeEmail(ctx context.Context, rawMessage json.Raw
 		return err
 	}
 	if payloadData.NewEmail == "" {
-		logger.Error("Invalid email data")
+		logger.ErrorCtx(ctx, "Invalid email data")
 		return errors.New("invalid email data")
 	}
 	cfg := contexthelper.GetConfig(ctx)
 
-	userRepository := repository.NewUserRepository(c.db)
+
+	userRepository := repository.NewUserRepository(db)
 	user, err := userRepository.GetById(ctx, ct.UserId)
 	if err != nil {
 		return err
@@ -161,11 +163,11 @@ func (c *Consumer) sendEmailChangeEmail(ctx context.Context, rawMessage json.Raw
 	}
 
 	link := fmt.Sprintf("%s/confirm/%s", cfg.Frontend.BaseURL, data.EmailChangeToken)
-	err = sender.SendEmailChangeEmail(payloadData.NewEmail, user.Name, link)
+	err = sender.SendEmailChangeEmail(ctx, payloadData.NewEmail, user.Name, link)
 	if err != nil {
 		return err
 	}
-	logger.Info("Email change email sent to %s", payloadData.NewEmail)
+	logger.InfoCtx(ctx, "Email change email sent to %s", payloadData.NewEmail)
 	return nil
 }
 
@@ -178,14 +180,14 @@ func (c *Consumer) sendPasswordResetEmail(ctx context.Context, rawMessage json.R
 	if data.PasswordResetToken == "" {
 		return errors.New("empty password reset token")
 	}
-
-	confirmationRepo := repository.NewConfirmationTokenRepository(c.db)
+	db := contexthelper.GetDb(ctx)
+	confirmationRepo := repository.NewConfirmationTokenRepository(db)
 	ct, err := confirmationRepo.GetActiveNewTokenWithType(ctx, data.PasswordResetToken, models.ConfirmationTokenTypePasswordChange)
 	if err != nil {
 		return err
 	}
-
-	userRepository := repository.NewUserRepository(c.db)
+	
+	userRepository := repository.NewUserRepository(db)
 	user, err := userRepository.GetById(ctx, ct.UserId)
 	if err != nil {
 		return err
@@ -198,10 +200,10 @@ func (c *Consumer) sendPasswordResetEmail(ctx context.Context, rawMessage json.R
 	cfg := contexthelper.GetConfig(ctx)
 
 	link := fmt.Sprintf("%s/reset-password/%s", cfg.Frontend.BaseURL, data.PasswordResetToken)
-	err = sender.SendPasswordResetEmail(user.Email, user.Name, link)
+	err = sender.SendPasswordResetEmail(ctx, user.Email, user.Name, link)
 	if err != nil {
 		return err
 	}
-	logger.Info("Password reset email sent to %s", user.Email)
+	logger.InfoCtx(ctx, "Password reset email sent to %s", user.Email)
 	return nil
 }
