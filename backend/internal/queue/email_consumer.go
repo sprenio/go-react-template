@@ -1,21 +1,23 @@
 package queue
 
 import (
+	"backend/internal/contexthelper"
 	"backend/pkg/logger"
-	"encoding/json"
 	"context"
-) 
+	"encoding/json"
+)
 
 type EmailTask struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
 	Username string `json:"username"`
-	Retries int `json:"retries"`
+	Retries  int    `json:"retries"`
 }
 
 func (c *Consumer) StartEmailConsumer(ctx context.Context) error {
-	ch, err := c.rabbitConn.Channel()
+	rabbitConn := contexthelper.GetRabbitConn(ctx)
+	ch, err := rabbitConn.Channel()
 	if err != nil {
-		logger.Error("Failed to open channel: %v", err)
+		logger.ErrorCtx(ctx, "Failed to open channel: %v", err)
 		return err
 	}
 	defer ch.Close()
@@ -25,39 +27,39 @@ func (c *Consumer) StartEmailConsumer(ctx context.Context) error {
 
 	msgs, err := ch.Consume(emailMainQueue, "", false, false, false, false, nil)
 	if err != nil {
-		logger.Error("Failed to register email consumer: %v", err)
+		logger.ErrorCtx(ctx, "Failed to register email consumer: %v", err)
 		return err
 	}
 
-	logger.Info("📩 Email consumer started...")
+	logger.InfoCtx(ctx, "📩 Email consumer started...")
 
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Info("⏹ Email consumer stopped by context")
+			logger.InfoCtx(ctx, "⏹ Email consumer stopped by context")
 			return nil
 		case d, ok := <-msgs:
 			if !ok {
-				logger.Info("📭 Email queue closed")
+				logger.InfoCtx(ctx, "📭 Email queue closed")
 				return nil
 			}
 
 			var event QueueEvent
 			if err := json.Unmarshal(d.Body, &event); err != nil {
-				logger.Error("❌ Invalid email task: %v", err)
+				logger.ErrorCtx(ctx, "❌ Invalid email task: %v", err)
 				d.Ack(false)
 				continue
 			}
-
+			logger.InfoCtx(ctx, "🔄 Handling email task: %s", event.Task)
 			if err := c.HandleEmailTask(ctx, event.Task, event.Data); err != nil {
-				logger.Error("Failed to handle email task: %v", err)
+				logger.ErrorCtx(ctx, "Failed to handle email task: %v", err)
 
 				event.Retries++
 				if event.Retries > emailMaxRetries {
-					logger.Warn("💀 Email max retries reached: %v", event)
+					logger.WarnCtx(ctx, "💀 Email max retries reached: %v", event)
 					publishJSON(ch, emailDLQQueue, event)
 				} else {
-					logger.Warn("🔄 Email retry %d/%d", event.Retries, emailMaxRetries)
+					logger.WarnCtx(ctx, "🔄 Email retry %d/%d", event.Retries, emailMaxRetries)
 					publishJSON(ch, emailRetryQueue, event)
 				}
 				d.Ack(false)
@@ -65,7 +67,7 @@ func (c *Consumer) StartEmailConsumer(ctx context.Context) error {
 			}
 
 			d.Ack(false)
-			logger.Info("✅ Email task handled successfully: %s", event.Task)
+			logger.InfoCtx(ctx, "✅ Email task handled successfully: %s", event.Task)
 		}
 	}
 }
