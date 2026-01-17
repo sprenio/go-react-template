@@ -84,6 +84,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
     };
 
     const logout = (REASON_CODE: string) => {
+        sessionStorage.clear()
         if(!appUserRef.current){
             return
         }
