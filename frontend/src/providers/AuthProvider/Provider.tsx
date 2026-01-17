@@ -67,7 +67,7 @@ export function AuthProvider({children}: { children: React.ReactNode }) {
                     scheduleMeRefresh();
                 }
             }
-        }, 30_000);
+        }, 300_000);
     };
 
     const setLoginUser = (user: UserType | null) => {
