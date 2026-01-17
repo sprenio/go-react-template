@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import { useMessage } from '@/providers/MessageProvider';
 import { FormWrapper } from '@/components/Form';
 import {ApiError} from '@/api';
+import {useNavigate} from 'react-router-dom';
 
 export default function LoginForm() {
     const { t } = useTranslation();
@@ -16,7 +17,7 @@ export default function LoginForm() {
     const { setLoginUser } = useAuth();
     const [rememberMe, setRememberMe] = useState(false);
     const { showMessage, clearMessage } = useMessage();
-
+    const navigate = useNavigate();
     const handleSubmit = (e:React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         clearMessage();
@@ -27,10 +28,11 @@ export default function LoginForm() {
                     toast.success(t('login.success'))
                     setLoginUser(data.user);
                     setEmail('');
+                    navigate('/');
                 },
                 onError: (error:ApiError) => {
                     console.error('Login failed code:', error.code);
-                    let errorMessage = getApiCodeDescription(error.code);
+                    const errorMessage = getApiCodeDescription(error.code);
                     if (error.code === apiCodes.API_Login_Invalid_Credentials) {
                         showMessage(errorMessage, 'error');
                     } else {

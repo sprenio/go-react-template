@@ -1,16 +1,8 @@
-import { Navigate } from 'react-router-dom';
+import { AuthenticatedLayout } from '@/layouts/AuthenticatedLayout';
 import { useAuth } from '@/providers/AuthProvider';
-import React from "react";
+import { Navigate } from 'react-router-dom';
 
-export function ProtectedRoute({ children }:{children: React.ReactNode}) {
-    const { appUser, meInProgress } = useAuth();
-
-    if (!appUser) {
-        if (meInProgress) {
-            return <div></div>;
-        }
-        return <Navigate to="/login" replace />;
-    }
-
-    return children;
+export function ProtectedRoute() {
+  const {appUser} = useAuth();
+  return appUser ? <AuthenticatedLayout /> : <Navigate to="/login" replace />;
 }
