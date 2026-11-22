@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS `db_changes` (
     `start_date` datetime NOT NULL,
     `complete_date` datetime DEFAULT NULL,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 INSERT INTO `db_changes` (`date_dir`, `file_name`, `start_date`, `complete_date`) VALUES (0, '000_init.sql', @startDate, NOW());

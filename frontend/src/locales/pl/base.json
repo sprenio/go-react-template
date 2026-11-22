@@ -3,7 +3,18 @@
     "logout": "Wyloguj",
     "unknown_error": "Wystąpił błąd",
     "logout_success": "Wylogowano pomyślnie!",
-    "back_to_main_page": "Wróć do strony głównej"
+    "back_to_main_page": "Wróć do strony głównej",
+    "empty_state_message": "Brak wyników. Spróbuj dostosować wyszukiwanie lub filtry.",
+    "required_fields_info": "Pola oznaczone <span class=\"required\">*</span> są wymagane.",
+    "ief_name": "Fundusz wydatków nieregularnych",
+    "btn_save": "Zapisz",
+    "btn_cancel": "Anuluj",
+    "btn_delete": "Usuń",
+    "btn_edit": "Edytuj",
+    "ph_amount": "Podaj kwotę",
+    "error_loading_data": "Wystąpił błąd podczas ładowania danych.",
+    "version_update_available": "Dostępna jest nowa wersja aplikacji.",
+    "btn_refresh": "Odśwież"
   },
   "api": {
     "error": {
@@ -22,8 +33,10 @@
     "unknown_error": "Wystąpił nieznany błąd.",
     "general_success": "Operacja zakończona sukcesem",
     "generic": "Wystąpił błąd podczas przetwarzania żądania.",
+    "1000": "Operacja wykonana pomyślnie",
     "1101": "Użytkownik o tej nazwie lub z tym adresem email już istnieje.",
     "1201": "Nieprawidłowy login lub hasło.",
-    "1400": "Ustawienia zostały pomyślnie zapisane"
+    "1400": "Ustawienia zostały pomyślnie zapisane",
+    "1800": "Źródło zastało pomyślnie zapisane"
   }
 }

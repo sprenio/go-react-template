@@ -1,1 +1,1 @@
-export {GridSmLgWrapper} from './GridSmLgWrapper';
+export { GridSmLgWrapper } from './GridSmLgWrapper';

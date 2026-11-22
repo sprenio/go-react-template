@@ -3,7 +3,18 @@
     "logout": "Log out",
     "unknown_error": "An error occurred",
     "logout_success": "Logged out successfully!",
-    "back_to_main_page": "Back to the main page"
+    "back_to_main_page": "Back to the main page",
+    "empty_state_message": "No results found. Try adjusting your search or filters.",
+    "required_fields_info": "Fields marked <span class=\"required\">*</span> are required.",
+    "ief_name": "Sinking fund",
+    "btn_save": "Save",
+    "btn_cancel": "Cancel",
+    "btn_delete": "Delete",
+    "btn_edit": "Edit",
+    "ph_amount": "Enter amount",
+    "error_loading_data": "An error occurred while loading data.",
+    "version_update_available": "A new version of the application is available.",
+    "btn_refresh": "Refresh"
   },
   "api": {
     "error": {
@@ -22,8 +33,10 @@
     "unknown_error": "An unknown error occurred.",
     "general_success": "Operation completed successfully",
     "generic": "An error occurred while processing the request.",
+    "1000": "Operation completed successfully",
     "1101": "A user with this name or email already exists.",
     "1201": "Invalid username or password.",
-    "1400": "Settings saved successfully"
+    "1400": "Settings saved successfully",
+    "1800": "Source saved successfully"
   }
 }

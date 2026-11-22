@@ -3,7 +3,18 @@
     "logout": "Abmelden",
     "unknown_error": "Ein Fehler ist aufgetreten",
     "logout_success": "Erfolgreich abgemeldet!",
-    "back_to_main_page": "Zurück zur Startseite"
+    "back_to_main_page": "Zurück zur Startseite",
+    "empty_state_message": "Keine Ergebnisse gefunden. Versuchen Sie, Ihre Suche oder Filter anzupassen.",
+    "required_fields_info": "Mit <span class=\"required\">*</span> markierte Felder sind erforderlich.",
+    "ief_name": "Ausgabenfonds",
+    "btn_save": "Speichern",
+    "btn_cancel": "Abbrechen",
+    "btn_delete": "Löschen",
+    "btn_edit": "Bearbeiten",
+    "ph_amount": "Betrag eingeben",
+    "error_loading_data": "Beim Laden der Daten ist ein Fehler aufgetreten.",
+    "version_update_available": "Eine neue Version der Anwendung ist verfügbar.",
+    "btn_refresh": "Aktualisieren"
   },
   "api": {
     "error": {
@@ -22,8 +33,10 @@
     "unknown_error": "Ein unbekannter Fehler ist aufgetreten.",
     "general_success": "Vorgang erfolgreich abgeschlossen",
     "generic": "Beim Verarbeiten der Anfrage ist ein Fehler aufgetreten.",
+    "1000": "Vorgang erfolgreich abgeschlossen",
     "1101": "Ein Benutzer mit diesem Namen oder dieser E-Mail existiert bereits.",
     "1201": "Ungültiger Benutzername oder Passwort.",
-    "1400": "Einstellungen erfolgreich gespeichert"
+    "1400": "Einstellungen erfolgreich gespeichert",
+    "1800": "Quelle erfolgreich gespeichert"
   }
 }

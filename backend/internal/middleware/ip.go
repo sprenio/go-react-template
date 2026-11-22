@@ -20,9 +20,9 @@ func IP(next http.Handler) http.Handler {
 
 
 func getClientIP(r *http.Request) string {
-	// 1. X-Forwarded-For (może zawierać kilka IP)
+	// 1. X-Forwarded-For (may contain multiple IPs)
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		// pierwszy = prawdziwy klient
+		// first = real client
 		parts := strings.Split(xff, ",")
 		return strings.TrimSpace(parts[0])
 	}

@@ -27,3 +27,44 @@ token:
   jwt_secret: "supersecuresecretkey"
   access_token_ttl_minutes: 10
   refresh_token_ttl_days: 30
+
+rate_limit:
+  enabled: true
+  anonymous_global:
+    - rate: 10
+      window: 1s
+    - rate: 100
+      window: 1m
+    - rate: 800
+      window: 10m
+  authorized_global:
+    - rate: 15
+      window: 1s
+    - rate: 150
+      window: 1m
+    - rate: 1200
+      window: 10m
+  endpoints:
+    register:
+      - rate: 1
+        window: 1s
+      - rate: 3
+        window: 1m
+      - rate: 10
+        window: 10m
+    reset:
+      - rate: 1
+        window: 1s
+      - rate: 5
+        window: 1m
+      - rate: 20
+        window: 10m
+    login:
+      - rate: 1
+        window: 1s
+      - rate: 5
+        window: 1m
+      - rate: 20
+        window: 10m
+
+

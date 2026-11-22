@@ -1,1 +1,1 @@
-export {useResetPassword} from './useResetPassword';
+export { useResetPassword } from './useResetPassword';

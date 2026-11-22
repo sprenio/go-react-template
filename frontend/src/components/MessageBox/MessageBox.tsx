@@ -7,17 +7,19 @@ const iconsMap = {
   info: Info,
 };
 type MessageBoxProps = {
-    message: string,
-    type: 'info' | 'success' | 'warning' | 'error'
-}
-export function MessageBox({ message, type = 'info' }:MessageBoxProps) {
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+};
+export function MessageBox({ message, type = 'info' }: MessageBoxProps) {
   if (!message) return null;
-
   const Icon = iconsMap[type] || Info;
 
   return (
-    <div className={`flex items-center justify-center p-[var(--space-sm)] m-[var(--space-xs)] rounded-[var(--radius-md)] text-[length:var(--text-md)] font-medium
-        msg-type type-` + type}>
+    <div
+      className={
+        `msg-type type-${type} m-[var(--space-xs)] flex items-center justify-center rounded-[var(--radius-md)] p-[var(--space-sm)] text-[length:var(--text-md)] font-medium`
+      }
+    >
       <Icon style={{ marginRight: '0.5rem' }} size={20} />
       {message}
     </div>

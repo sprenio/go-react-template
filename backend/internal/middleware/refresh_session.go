@@ -3,8 +3,7 @@ package middleware
 import (
 	"backend/internal/contexthelper"
 	"backend/internal/cookie"
-	"backend/internal/repository"
-	"backend/internal/service"
+	"backend/internal/session/service"
 	"backend/pkg/logger"
 	"net/http"
 )
@@ -15,22 +14,18 @@ func RefreshSession(next http.Handler) http.Handler {
 
 		sw := &statusResponseWriter{
 			ResponseWriter: w,
-			status:         http.StatusOK, // domyślny
+			status:         http.StatusOK, // default
 		}
 		accessTokenData, ctx := contexthelper.GetAccessTokenData(ctx)
 		refreshToken := cookie.GetRefreshToken(r)
-		logger.DebugCtx(ctx, "middleware refreshToken: %s", refreshToken)
 		accessTokenData.RefreshToken = refreshToken
 		userId, ok := contexthelper.GetUserId(ctx)
-		logger.DebugCtx(ctx, "middleware accesTokenData: %v, userid: %d", accessTokenData, userId)
 		if !ok && refreshToken != "" {
 			var err error
-			db := contexthelper.GetDb(ctx)
-			sessionRepo := repository.NewUserSessionsRepository(db)
-			sessionService := service.NewSessionService(sessionRepo, w)
+			sessionService := service.NewService(ctx, w)
 			userId, err = sessionService.Login(ctx, refreshToken)
 			if err != nil {
-				logger.ErrorCtx(ctx, "Login user by refresh token %v failed: %v", refreshToken, err)
+				logger.ErrorCtx(ctx, "Login user by refresh token failed", "refreshToken", refreshToken, "error", err)
 				sessionService.Logout(ctx, refreshToken)
 				refreshToken = ""
 			}

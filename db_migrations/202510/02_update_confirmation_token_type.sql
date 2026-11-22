@@ -1,2 +1,2 @@
 ALTER TABLE `confirmation_tokens`
-    CHANGE `type` `type` ENUM ('register','email_change','password_change') NOT NULL;
+    CHANGE `type` `type` ENUM ('register','email_change','reset_password') NOT NULL;

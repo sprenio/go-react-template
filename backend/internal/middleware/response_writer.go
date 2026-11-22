@@ -20,7 +20,7 @@ func (w *statusResponseWriter) WriteHeader(code int) {
 }
 func (w *statusResponseWriter) Write(b []byte) (int, error) {
 	if !w.wroteHeader {
-		// Jeśli handler nie wywołał WriteHeader explicite,
+		// If the handler did not call WriteHeader explicitly,
 		// status = 200
 		w.WriteHeader(http.StatusOK)
 	}

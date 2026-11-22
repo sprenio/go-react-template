@@ -27,5 +27,7 @@
   "lbl_app_opt_2": "Option 2 (Auswahl)",
   "lbl_app_opt_3": "Option 3 (Kontrollkästchen)",
   "lbl_app_opt_4": "Option 4 (Radio)",
-  "ph_app_opt_1": "Etwas eingeben..."
+  "ph_app_opt_1": "Etwas eingeben...",
+  "confirmation_email_sent": "Eine E-Mail mit einem Bestätigungslink wurde an deine neue E-Mail-Adresse gesendet.",
+  "settings_saved": "Die Einstellungen wurden erfolgreich gespeichert."
 }

@@ -1,0 +1,157 @@
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.27'
+          cache-dependency-path: "**/go.sum"
+
+      - name: Backend tests
+        working-directory: ./backend
+        run: go test ./...
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24.11'
+          cache: npm
+          cache-dependency-path: "**/package-lock.json"
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Frontend tests
+        working-directory: ./frontend
+        run: npm test
+
+  publish:
+    name: Build and publish images
+    runs-on: ubuntu-24.04
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Get commit hash and image prefix
+        id: meta
+        shell: bash
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          SLUG="${{ vars.APP_SLUG }}"
+          if [ -z "$SLUG" ]; then
+            SLUG=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          else
+            SLUG=$(echo "$SLUG" | tr '[:upper:]' '[:lower:]')
+          fi
+
+          echo "image_prefix=ghcr.io/${OWNER}/${SLUG}" >> $GITHUB_OUTPUT
+
+      - name: Validate release tag
+        shell: bash
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release tag: $GITHUB_REF_NAME"
+            echo "Expected format: v1.2.3"
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate APP_NAME
+        env:
+          APP_NAME: ${{ vars.APP_NAME }}
+        run: |
+          if [ -z "$APP_NAME" ]; then
+            echo "Set the APP_NAME repository variable in GitHub."
+            exit 1
+          fi
+
+      - name: Build and push backend webserver
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/services/backend/Dockerfile
+          push: true
+          build-args: |
+            TARGET=webserver
+            GIT_COMMIT=${{ steps.meta.outputs.sha_short }}
+            GIT_TAG=${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.image_prefix }}-backend-webserver:${{ github.ref_name }}
+
+      - name: Build and push backend consumer
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/services/backend/Dockerfile
+          push: true
+          build-args: |
+            TARGET=consumer
+            GIT_COMMIT=${{ steps.meta.outputs.sha_short }}
+            GIT_TAG=${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.image_prefix }}-backend-consumer:${{ github.ref_name }}
+
+      - name: Build and push backend cron
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/services/backend/Dockerfile
+          push: true
+          build-args: |
+            TARGET=cron
+            GIT_COMMIT=${{ steps.meta.outputs.sha_short }}
+            GIT_TAG=${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.image_prefix }}-backend-cron:${{ github.ref_name }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/services/frontend/Dockerfile
+          push: true
+          build-args: |
+            APP_NAME=${{ vars.APP_NAME }}
+            GIT_COMMIT=${{ steps.meta.outputs.sha_short }}
+            GIT_TAG=${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.image_prefix }}-frontend:${{ github.ref_name }}
+
+      - name: Build and push database migrator
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/services/db-migrator/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.image_prefix }}-db-migrator:${{ github.ref_name }}

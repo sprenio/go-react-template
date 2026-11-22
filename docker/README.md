@@ -1,57 +1,120 @@
-# Docker – MyApp
+# Docker – Development Environment
 
-This directory contains the Docker configuration for running the entire stack locally.
+This directory contains the Docker configuration and development tooling for local development of the application.
 
-## 📦 Structure
+> **Production Deployment:** Production configuration has been moved to a dedicated deployment repository (e.g., using images built by `.github/workflows/release.yml`). Do not use this directory or `docker-control.sh` for production deployments.
 
+---
+
+## 1. Directory Structure
+
+```text
+docker/
+├── docker-compose.yml              # Docker Compose configuration for dev services
+├── docker-control.sh               # Helper CLI script for managing dev containers
+├── release.sh                      # Tag creation and release script
+└── services/
+    ├── backend/                    # Dockerfiles and entrypoints for Go backend
+    ├── db/                         # Init scripts for local MariaDB
+    ├── db-migrator/                # Migrator runner Dockerfile
+    ├── frontend/                   # Frontend Dockerfile (used by CI/CD)
+    └── nginx/                      # Local Nginx proxy configuration
+        ├── default_server.conf.sample  # Sample tracked Nginx dev config
+        └── default_server.conf         # Local ignored config (auto-created if missing)
 ```
-src/
-├── db/                   # database schema and migrations
-├── env/                  # shared environment variables used in Docker
-├── docker-compose.yml    # defines all services (frontend, backend, database)
-├── docker-control.bat    # script for windows to control Docker
-├── docker-control.sh     # script for linux to control Docker
+
+The application source code (`backend/`, `frontend/`, `db_migrations/`) is mounted directly into the development containers.
+
+---
+
+## 2. Managing the Development Environment
+
+Use `docker-control.sh` to manage your local Docker environment. The script automatically sources variables from the root `.env` file and provides convenient shortcuts.
+
+Always run commands from this directory:
+
+```bash
+cd docker
 ```
-- `Dockerfile` – exists in `frontend/` and `backend/` for building app containers
 
-## 🐳 Run everything
+### Start the environment
 
-Use the appropriate script for your operating system:
+Start all services in detached mode:
 
-- **Windows**
-  ```bash
-  .\docker-compose.bat up --build
-  ```
-- **Linux/macOS**
-  ```bash
-  ./docker-compose.sh up --build
-  ```
+```bash
+./docker-control.sh up
+```
 
-## 🔁 Rebuild a single service
+To build or rebuild images before starting:
 
-Use the appropriate script for your operating system:
+```bash
+./docker-control.sh up --build
+```
 
-- **Windows**
-  ```bash
-  .\docker-compose.bat up --build frontend
-  ```
-- **Linux/macOS**
-  ```bash
-  ./docker-compose.sh up --build frontend
-  ```
+### Check container status
 
+```bash
+./docker-control.sh status
+```
 
-## 📦 Used images
+### Rebuild images
 
-- Node.js + Vite for frontend
-- Go for backend
-- `mariadb:11.8.2-ubi` as the database
+Rebuild all images without using cache:
 
-## ⚙️ Tips
+```bash
+./docker-control.sh build
+```
 
-- You can override environment values in `./env/.env*`
-- Volumes are used to persist DB data
-- Ports:
-  - `3000` – frontend
-  - `8080` – backend API
-  - `3306` – MySQL/MariaDB
+Rebuild a specific service:
+
+```bash
+./docker-control.sh build webserver
+./docker-control.sh build consumer
+./docker-control.sh build cron
+```
+
+### Restart containers
+
+Restart running containers without recreating them (soft restart):
+
+```bash
+./docker-control.sh softrestart
+```
+
+Perform a full recreate/restart:
+
+```bash
+./docker-control.sh restart
+```
+
+### Stop the environment
+
+Stop containers and remove project volumes:
+
+```bash
+./docker-control.sh down
+```
+
+> [!WARNING]
+> The `down` command removes Docker volumes (`--volumes`). Be aware that this can reset your local database state.
+
+### Run arbitrary Compose commands
+
+For any standard Docker Compose operation not covered by the script shortcuts, use the `raw` sub-command:
+
+```bash
+./docker-control.sh raw logs -f
+./docker-control.sh raw logs -f webserver
+./docker-control.sh raw ps
+./docker-control.sh raw exec db bash
+```
+
+---
+
+## 3. Releases
+
+To release a new version (creates and pushes a `vX.Y.Z` git tag, which triggers the GitHub Release workflow):
+
+```bash
+./release.sh
+```

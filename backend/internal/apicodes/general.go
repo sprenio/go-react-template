@@ -6,9 +6,11 @@ import (
 )
 
 const (
-	API_General_Success       = 1000
-	API_General_Unknown_Error = 1001
-	API_General_Invalid_JSON  = 1002
+	API_General_Success           = 1000
+	API_General_Unknown_Error     = 1001
+	API_General_Invalid_JSON      = 1002
+	API_General_Payload_Too_Large = 1003
+	API_General_Too_Many_Requests = 1004
 
 	API_General_Custom_Error        = 1051
 	API_General_Invalid_Input_Value = 1052
@@ -16,9 +18,11 @@ const (
 
 // Mapa kodów odpowiedzi do opisów
 var generalCodeDescriptions = map[int]string{
-	API_General_Success:       "Success",
-	API_General_Unknown_Error: "Unknown error",
-	API_General_Invalid_JSON:  "Invalid JSON",
+	API_General_Success:           "Success",
+	API_General_Unknown_Error:     "Unknown error",
+	API_General_Invalid_JSON:      "Invalid JSON",
+	API_General_Payload_Too_Large: "Payload too large",
+	API_General_Too_Many_Requests: "Too many requests",
 
 	API_General_Custom_Error:        "Custom error",
 	API_General_Invalid_Input_Value: "Invalid input value",

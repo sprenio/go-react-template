@@ -27,5 +27,7 @@
   "lbl_app_opt_2": "Option 2 (select)",
   "lbl_app_opt_3": "Option 3 (checkbox)",
   "lbl_app_opt_4": "Option 4 (radio)",
-  "ph_app_opt_1": "Type something..."
+  "ph_app_opt_1": "Type something...",
+  "confirmation_email_sent": "An email with a confirmation link has been sent to your new email address.",
+  "settings_saved": "Settings have been successfully saved."
 }

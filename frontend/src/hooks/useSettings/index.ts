@@ -1,2 +1,2 @@
-export {useSettings} from './useSettings';
-export {useEmailChange} from './useEmailChange';
+export { useSettings } from './useSettings';
+export { useEmailChange } from './useEmailChange';

@@ -5,15 +5,30 @@ import (
 	"backend/pkg/logger"
 	"context"
 	"database/sql"
-	"log"
+	"sync"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/redis/go-redis/v9"
 )
 
 type AccessTokenData struct {
 	UserId       uint
 	SetCookies   bool
 	RefreshToken string
+}
+
+type CurrencyOrderLoaderFunc func(ctx context.Context, userId uint) ([]string, error)
+type CurrencyOrderHolder struct {
+	loader CurrencyOrderLoaderFunc
+	order  []string
+	loaded bool
+	mu     sync.Mutex
+}
+
+func InitCurrencyOrder(ctx context.Context, loader CurrencyOrderLoaderFunc) context.Context {
+	return context.WithValue(ctx, currencyOrderCtxKey, &CurrencyOrderHolder{
+		loader: loader,
+	})
 }
 
 func GetAccessTokenData(ctx context.Context) (*AccessTokenData, context.Context) {
@@ -73,9 +88,10 @@ func GetConfig(ctx context.Context) *config.Config {
 	return nil
 }
 
-func SetServices(ctx context.Context, db *sql.DB, rabbitConn *amqp.Connection) context.Context {
+func SetServices(ctx context.Context, db *sql.DB, rabbitConn *amqp.Connection, redisClient *redis.Client) context.Context {
 	ctx = SetDb(ctx, db)
-	return SetRabbitConn(ctx, rabbitConn)
+	ctx = SetRabbitConn(ctx, rabbitConn)
+	return SetRedisClient(ctx, redisClient)
 }
 
 func SetDb(ctx context.Context, db *sql.DB) context.Context {
@@ -86,6 +102,21 @@ func SetRabbitConn(ctx context.Context, conn *amqp.Connection) context.Context {
 	return context.WithValue(ctx, rabbitCtxKey, conn)
 }
 
+func SetRedisClient(ctx context.Context, redisClient *redis.Client) context.Context {
+	return context.WithValue(ctx, redisClientCtxKey, redisClient)
+}
+
+func SetRateLimiter(ctx context.Context, rateLimiter any) context.Context {
+	return context.WithValue(ctx, rateLimiterCtxKey, rateLimiter)
+}
+
+func GetRateLimiter(ctx context.Context) any {
+	if rateLimiter := ctx.Value(rateLimiterCtxKey); rateLimiter != nil {
+		return rateLimiter
+	}
+	logger.ErrorCtx(ctx, "There is no rate limiter in context")
+	return nil
+}
 func GetDb(ctx context.Context) *sql.DB {
 	if db, ok := ctx.Value(dbCtxKey).(*sql.DB); ok {
 		return db
@@ -95,9 +126,41 @@ func GetDb(ctx context.Context) *sql.DB {
 }
 func GetRabbitConn(ctx context.Context) *amqp.Connection {
 	if rabbitConn, ok := ctx.Value(rabbitCtxKey).(*amqp.Connection); ok {
-		log.Printf("get Rabbit Connection")
+		logger.DebugCtx(ctx, "get Rabbit Connection")
 		return rabbitConn
 	}
 	logger.ErrorCtx(ctx, "There is no rabbit connection in context")
 	return nil
+}
+
+func GetRedisClient(ctx context.Context) *redis.Client {
+	if redisClient, ok := ctx.Value(redisClientCtxKey).(*redis.Client); ok {
+		logger.DebugCtx(ctx, "get Redis Client")
+		return redisClient
+	}
+	logger.ErrorCtx(ctx, "There is no redis client in context")
+	return nil
+}
+
+func GetCurrencyOrder(ctx context.Context) []string {
+	holder, ok := ctx.Value(currencyOrderCtxKey).(*CurrencyOrderHolder)
+	if !ok || holder == nil {
+		return nil
+	}
+	holder.mu.Lock()
+	defer holder.mu.Unlock()
+	if holder.loaded {
+		return holder.order
+	}
+	userId, ok := GetUserId(ctx)
+	if !ok || holder.loader == nil {
+		return nil
+	}
+	// Wywołanie przekazanego loadera przy pierwszym żądaniu
+	orderedCurrencyCodes, err := holder.loader(ctx, userId)
+	if err == nil {
+		holder.order = orderedCurrencyCodes
+		holder.loaded = true
+	}
+	return holder.order
 }

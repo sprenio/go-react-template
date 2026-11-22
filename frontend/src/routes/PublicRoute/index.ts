@@ -1,3 +1,2 @@
-export {getPublicRoutes} from './PublicRoutes';
-export {PublicRoute} from './PublicRoute';
-
+export { getPublicRoutes } from './PublicRoutes';
+export { PublicRoute } from './PublicRoute';

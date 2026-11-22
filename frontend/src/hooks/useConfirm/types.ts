@@ -1,6 +1,6 @@
 export type ConfirmData = {
-    hash: string
-}
+  hash: string;
+};
 export type ConfirmResponse = {
-    token_type: 'email_change' | 'register'
-}
+  token_type: 'email_change' | 'register';
+};

@@ -1,227 +1,375 @@
 /* ===== GLOBAL RESET ===== */
 html {
-    box-sizing: border-box;
-    font-size: 100%;
+  box-sizing: border-box;
+  font-size: 100%;
 }
 
 @media (max-width: 768px) {
-    html {
-        font-size: 90%;
-    }
+  html {
+    font-size: 90%;
+  }
 }
 
-*, *::before, *::after {
-    box-sizing: inherit;
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
 }
 
 /* ===== BODY ===== */
 body {
-    margin: 0;
-    font-family: var(--font-body), serif;
-    color: var(--text);
-    background-color: var(--bg);
+  margin: 0;
+  font-family: var(--font-body), serif;
+  color: var(--text);
+  background-color: var(--bg);
 }
 
 /* ===== LINKS & BUTTONS ===== */
 a,
 button {
-    box-sizing: border-box;
-    font-family: var(--font-body), serif;
+  box-sizing: border-box;
+  font-family: var(--font-body), serif;
+}
+
+a,
+button:not(:disabled) {
+  cursor: pointer;
 }
 
 a {
-    color: var(--primary);
-    text-decoration: none;
-    transition: color 0.2s ease;
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 a:hover {
-    color: var(--primary-hover);
-    text-decoration: underline;
+  color: var(--primary-hover);
+  text-decoration: underline;
 }
 
 /* ===== HEADINGS ===== */
-h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading), serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading), serif;
 }
 
 /* ===== UTILITIES ===== */
 .flag {
-    margin-right: var(--space-xs);
-    border-radius: var(--radius-sm);
+  margin-right: var(--space-xs);
+  border-radius: var(--radius-sm);
 }
 
 /* ===== FORM WRAPPER ===== */
-.form-wrapper {
-    @apply flex flex-col gap-[var(--space-md)] w-full bg-[var(--surface)] text-[length:var(--text-md)] text-[var(--text)] font-[var(--font-body)];
-}
+@layer components {
+  .form-wrapper {
+    @apply flex w-full flex-col gap-[var(--space-md)] bg-[var(--surface)] text-[length:var(--text-md)] font-[var(--font-body)] text-[var(--text)];
 
-.form-wrapper label {
-    @apply text-[length:var(--text-sm)] text-[var(--text-secondary)];
-}
+    label {
+      @apply text-[length:var(--text-sm)] text-[var(--text-secondary)];
+    }
 
-.form-wrapper input[type='text'],
-.form-wrapper input[type='email'],
-.form-wrapper input[type='password'],
-.form-wrapper input[type='number'],
-.form-wrapper select {
-    @apply w-full p-[var(--space-sm)] border border-[var(--border)]
-    rounded-[var(--radius-sm)] bg-[var(--bg)] text-[var(--text)]
-    text-[length:var(--text-md)] transition-all duration-200;
-}
+    input[type='text'],
+    input[type='email'],
+    input[type='password'],
+    input[type='number'],
+    textarea,
+    select {
+      @apply w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg)] p-[var(--space-sm)] text-[length:var(--text-md)] text-[var(--text)] transition-all duration-200;
+    }
 
-.form-wrapper input[type='text']:focus,
-.form-wrapper input[type='email']:focus,
-.form-wrapper input[type='password']:focus,
-.form-wrapper input[type='number']:focus,
-.form-wrapper select:focus {
-    @apply outline-none border-[var(--primary)];
-    box-shadow: 0 0 0 2px var(--overlay);
-}
+    input[type='text']:focus,
+    input[type='email']:focus,
+    input[type='password']:focus,
+    input[type='number']:focus,
+    textarea:focus,
+    select:focus {
+      @apply border-[var(--primary)] outline-none;
+      box-shadow: 0 0 0 2px var(--overlay);
+    }
 
-.form-wrapper input[type='checkbox'] {
-    @apply w-[18px] h-[18px] mr-2 cursor-pointer accent-[var(--primary)]
-    border border-[var(--border)] rounded transition-all duration-200;
-}
+    input[type='checkbox'] {
+      @apply mr-2 h-[18px] w-[18px] cursor-pointer rounded border border-[var(--border)] accent-[var(--primary)] transition-all duration-200;
+    }
 
-.form-wrapper input[type='checkbox']:hover {
-    @apply border-[var(--primary)] bg-[var(--surface-hover)];
-}
+    input[type='checkbox']:hover {
+      @apply border-[var(--primary)] bg-[var(--surface-hover)];
+    }
 
-.form-wrapper input[type='checkbox']:checked {
-    @apply bg-[var(--primary)] border-[var(--primary)];
-}
+    input[type='checkbox']:checked {
+      @apply border-[var(--primary)] bg-[var(--primary)];
+    }
 
-.form-wrapper label.checkbox-label {
-    @apply flex
-    items-center
-    cursor-pointer
-    text-[length:var(--text-sm)]
-    text-[var(--text)]
-    py-[var(--space-xs)];
-}
+    label.checkbox-label {
+      @apply flex cursor-pointer items-center py-[var(--space-xs)] text-[length:var(--text-sm)] text-[var(--text)];
+    }
 
-.form-wrapper button[type='submit'] {
-    @apply bg-[var(--primary)] text-[var(--text-on-primary)] p-[var(--space-sm)]
-    border-none rounded-[var(--radius-sm)] cursor-pointer font-medium
-    transition-colors duration-200 hover:bg-[var(--primary-hover)]
-    active:scale-95;
-}
-.form-wrapper input[type='radio'] {
-    @apply w-[18px] h-[18px] mr-2 cursor-pointer accent-[var(--primary)] border border-[var(--border)]
-    rounded-full transition-all duration-200 hover:border-[var(--primary)] hover:bg-[var(--surface-hover)];
-}
-.form-wrapper label.radio-label {
-    @apply flex items-center cursor-pointer text-[length:var(--text-sm)] text-[var(--text)] my-1;
-}
+    .checkbox-field-wrapper {
+      @apply flex;
+    }
 
-.form-wrapper .helper-text {
-    @apply text-[length:var(--text-sm)] text-[var(--secondary)] mt-[var(--space-sm)];
-}
+    .checkbox-field-wrapper label {
+      @apply flex cursor-pointer items-center py-[var(--space-xs)] text-[length:var(--text-sm)] text-[var(--text)];
+    }
 
-.form-wrapper select {
-    @apply w-full px-[var(--space-sm)] py-[var(--space-sm)] border border-[var(--border)] rounded-[var(--radius-sm)] bg-[var(--surface)] text-[var(--text)] text-[length:var(--text-md)] cursor-pointer
-    appearance-none transition-[border-color,box-shadow] duration-200 focus:outline-none focus:border-[var(--primary)] focus:shadow-[0_0_0_2px_var(--overlay)];
-}
-.form-wrapper .select-wrapper {
-    @apply relative inline-block w-full;
-}
-.select-wrapper::after {
-    content: '▾';
-    @apply absolute top-1/2 right-[var(--space-sm)] -translate-y-1/2 pointer-events-none text-[var(--text-secondary)];
-}
+    .form-field:has(:is(input, select, textarea)[required])>label::after {
+      content: ' *';
+      color: red;
+    }
 
+    button {
+      @apply cursor-pointer rounded-[var(--radius-sm)] border-none bg-[var(--secondary)] p-[var(--space-sm)] font-medium text-[var(--text-on-secondary)] transition-colors duration-200 hover:bg-[var(--secondary-hover)] active:scale-95;
+    }
+
+    button[type='submit'] {
+      @apply bg-[var(--primary)] text-[var(--text-on-primary)] hover:bg-[var(--primary-hover)];
+    }
+
+    input[type='radio'] {
+      @apply mr-2 h-[18px] w-[18px] cursor-pointer rounded-full border border-[var(--border)] accent-[var(--primary)] transition-all duration-200 hover:border-[var(--primary)] hover:bg-[var(--surface-hover)];
+    }
+
+    label.radio-label {
+      @apply my-1 flex cursor-pointer items-center text-[length:var(--text-sm)] text-[var(--text)];
+    }
+
+    .helper-text {
+      @apply mt-[var(--space-sm)] text-[length:var(--text-sm)] text-[var(--secondary)];
+    }
+
+    select {
+      @apply w-full cursor-pointer appearance-none rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface)] px-[var(--space-sm)] py-[var(--space-sm)] text-[length:var(--text-md)] text-[var(--text)] transition-all duration-200 focus:border-[var(--primary)] focus:shadow-[0_0_0_2px_var(--overlay)] focus:outline-none;
+    }
+
+    .select-wrapper {
+      @apply relative inline-block w-full;
+    }
+
+    .select-wrapper::after {
+      content: '▾';
+      @apply pointer-events-none absolute top-1/2 right-[var(--space-sm)] -translate-y-1/2 text-[var(--text-secondary)];
+    }
+
+    .required-fields-info {
+      @apply text-[length:var(--text-sm)] text-[var(--secondary)];
+
+      .required {
+        color: red;
+      }
+    }
+
+    .helper-wrapper {
+      margin: 0 var(--space-xs);
+    }
+
+    .react-datepicker-wrapper {
+      display: unset !important;
+    }
+  }
+}
 
 /* ===== FORM FOOTER ===== */
 .form-footer {
-    @apply mt-[var(--space-lg)] text-center;
+  @apply mt-[var(--space-lg)] text-center;
 }
+
 .form-footer p {
-    margin: var(--space-xs) 0;
-    @apply text-[length:var(--text-sm)] text-[var(--secondary)]
+  margin: var(--space-xs) 0;
+  @apply text-[length:var(--text-sm)] text-[var(--secondary)];
 }
+
 .form-footer a {
-    @apply text-[var(--primary)] font-medium no-underline transition-colors duration-200 ease-in-out
-    hover:text-[var(--primary-hover)] hover:underline;
+  @apply font-medium text-[var(--primary)] no-underline transition-colors duration-200 ease-in-out hover:text-[var(--primary-hover)] hover:underline;
 }
 
 .top-menu .menu-link {
-    @apply bg-none border-none font-medium no-underline cursor-pointer
-    transition-colors duration-300 ease-in-out text-[var(--text)];
+  @apply cursor-pointer border-none bg-none font-medium text-[var(--text)] no-underline transition-colors duration-300 ease-in-out;
 }
+
 .top-menu .menu-link.desktop {
-    @apply text-[length:var(--text-md)];
+  @apply text-[length:var(--text-md)];
 }
 
 .top-menu .menu-link:hover {
-    color: var(--primary);
+  color: var(--primary);
 }
+
 .top-menu .menu-link.mobile {
-    @apply bg-transparent border-0 text-left px-6 py-4 text-[var(--text)] font-medium no-underline cursor-pointer transition-colors duration-200 hover:bg-[var(--surface-hover)];
+  @apply cursor-pointer border-0 bg-transparent px-6 py-4 text-left font-medium text-[var(--text)] no-underline transition-colors duration-200 hover:bg-[var(--surface-hover)];
 }
 
 .msg-type {
-    background-color:var(--info-bg);
-    color:var(--info-text);
-    @apply border border-[var(--info-border)];
+  background-color: var(--info-bg);
+  color: var(--info-text);
+  @apply border border-[var(--info-border)];
+
+  .msg-icon {
+    background-color: var(--info-icon-bg);
+    color: var(--info-text);
+  }
 }
+
 .msg-type.type-success {
-    background-color:var(--success-bg);
-    border-color:var(--success-border);
-    color:var(--success-text);
+  background-color: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success-text);
+
+  .msg-icon {
+    background-color: var(--success-icon-bg);
+    color: var(--success-text);
+  }
 }
+
 .msg-type.type-error {
-    background-color:var(--error-bg);
-    border-color:var(--error-border);
-    color:var(--error-text);
+  background-color: var(--error-bg);
+  border-color: var(--error-border);
+  color: var(--error-text);
+
+  .msg-icon {
+    background-color: var(--error-icon-bg);
+    color: var(--error-text);
+  }
 }
+
 .msg-type.type-warning {
-    background-color:var(--warning-bg);
-    border-color:var(--warning-border);
-    color:var(--warning-text);
+  background-color: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+
+  .msg-icon {
+    background-color: var(--warning-icon-bg);
+    color: var(--warning-text);
+  }
 }
 
 @keyframes fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(-5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 .fade-in {
-    animation: fade-in 0.3s ease-out;
+  animation: fade-in 0.3s ease-out;
 }
 
 /* ===== GRID ===== */
 .grid-sm-lg-wrapper {
-    @apply grid grid-cols-1 gap-[var(--space-sm)] items-start p-[var(--space-lg)] w-full m-0 md:grid-cols-[1fr_2fr];
+  @apply m-0 grid w-full grid-cols-1 items-start gap-[var(--space-sm)] p-[var(--space-lg)] md:grid-cols-[1fr_2fr];
 }
+
 .grid-sm-lg-wrapper .grid-column {
-    @apply flex flex-col gap-[var(--space-sm)] md:gap-[var(--space-lg)]
+  @apply flex flex-col min-w-0 gap-[var(--space-sm)] md:gap-[var(--space-lg)];
 }
-/* ===== SETTINGS ===== */
-.settings-sidebar {
-    height: fit-content;
+
+.grid-sm-lg-wrapper .grid-column:only-child {
+  grid-column: 1 / -1;
 }
-.settings-sidebar nav ul {
-    @apply list-none p-0 m-0;
+
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  height: fit-content;
 }
-.settings-sidebar li + li {
-    @apply mt-[var(--space-md)];
+
+.sidebar nav ul {
+  @apply m-0 list-none p-0;
 }
-.settings-sidebar button {
-    @apply w-full text-left px-[var(--space-md)] py-[var(--space-sm)] border-none bg-transparent text-[var(--text)] text-[length:var(--text-md)] rounded-[var(--radius-md)] cursor-pointer transition-all duration-200
-    hover:bg-[var(--surface-hover)];
+
+.sidebar li+li {
+  @apply mt-[var(--space-md)];
 }
-.settings-sidebar button.active {
-    @apply bg-[var(--primary-soft)] text-[var(--text-on-primary-soft)] font-semibold;
+
+.sidebar .item {
+  @apply w-full cursor-pointer rounded-[var(--radius-md)] border-none bg-transparent px-[var(--space-md)] py-[var(--space-sm)] text-left text-[length:var(--text-md)] text-[var(--text)] transition-all duration-200 hover:bg-[var(--surface-hover)];
 }
-.settings-content {
-    @apply transition-colors duration-300 ease-in-out;
+
+.sidebar .item.active {
+  @apply bg-[var(--primary-soft)] font-semibold text-[var(--text-on-primary-soft)];
 }
-.settings-content h2 {
-    @apply mb-[var(--space-md)] text-[length:var(--text-lg)] font-semibold;
+
+.sidebar-content {
+  @apply transition-colors duration-300 ease-in-out;
+}
+
+.sidebar-content h2 {
+  @apply mb-[var(--space-md)] text-[length:var(--text-lg)] font-semibold;
+}
+
+/* ==== SPINNER ==== */
+.spinner-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.spinner {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.spinner-sector {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 15px solid transparent;
+}
+
+.spinner-text {
+  @apply text-[length:var(--text-md)];
+  text-align: center;
+  max-width: 200px;
+  animation: loading-opacity 3s ease-in-out infinite;
+}
+
+.spinner-sector-blue {
+  animation: rotate 2s ease-out infinite;
+  border-top: 15px solid lightblue;
+}
+
+.spinner-sector-red {
+  animation: rotate 2.5s ease-in infinite;
+  border-top: 15px solid lightcoral;
+}
+
+.spinner-sector-green {
+  animation: rotate 1.5s ease-in-out infinite;
+  border-top: 15px solid lightgreen;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-opacity {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  25%,
+  75% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 0.1;
+  }
 }

@@ -1,5 +1,5 @@
 import { useMessage } from '@/providers/MessageProvider';
-import {MessageBox} from '@/components/MessageBox';
+import { MessageBox } from '@/components/MessageBox';
 
 export default function StateMessage() {
   const { message } = useMessage();

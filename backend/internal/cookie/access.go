@@ -2,9 +2,8 @@ package cookie
 
 import (
 	"backend/internal/contexthelper"
+	"backend/pkg/apperror"
 	"backend/pkg/logger"
-	"fmt"
-
 	"context"
 	"net/http"
 	"time"
@@ -40,9 +39,8 @@ func deleteCookie(ctx context.Context, w http.ResponseWriter, cookieKey string) 
 func GetUserIdFromJwtToken(r *http.Request) (uint, error) {
 	ctx := r.Context()
 	cookieToken := GetAccessToken(r)
-	logger.DebugCtx(ctx, "Received token: %s", cookieToken)
 	if cookieToken == "" {
-		err := fmt.Errorf("Access token is missing")
+		err := apperror.New("Access token is missing")
 		return 0, err
 	}
 	cfg := contexthelper.GetConfig(ctx)
@@ -50,26 +48,26 @@ func GetUserIdFromJwtToken(r *http.Request) (uint, error) {
 	token, err := jwt.Parse(cookieToken, func(t *jwt.Token) (interface{}, error) {
 		// sprawdź typ algorytmu
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unsupported algorithm: %v", t.Header["alg"])
+			return nil, apperror.New("Unsupported algorithm", "algorithm", t.Header["alg"])
 		}
 		return []byte(cfg.Token.JwtSecret), nil
 	})
 
 	if err != nil || !token.Valid {
 		if err == nil {
-			err = fmt.Errorf("Invalid JWT token")
+			err = apperror.New("Invalid JWT token")
 		}
 		return 0, err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		err := fmt.Errorf("Invalid claims in JWT token")
+		err := apperror.New("Invalid claims in JWT token")
 		return 0, err
 	}
 	userIDFloat, ok := claims["user_id"].(float64) // bo JSON parsuje liczby jako float64
 	if !ok {
-		err := fmt.Errorf("User ID not found in JWT claims")
+		err := apperror.New("User ID not found in JWT claims")
 		return 0, err
 	}
 	return uint(userIDFloat), nil
@@ -90,7 +88,7 @@ func DeleteRefreshToken(ctx context.Context, w http.ResponseWriter) {
 func SetAccessToken(ctx context.Context, w http.ResponseWriter, userId uint) {
 	token, err := generateJWT(ctx, userId)
 	if err != nil {
-		logger.WarnCtx(ctx, "Failed to generate JWT token: %v", err)
+		logger.WarnCtx(ctx, "Failed to generate JWT token", "error", err)
 		return
 	}
 	cfg := contexthelper.GetConfig(ctx)
@@ -103,7 +101,6 @@ func SetAccessToken(ctx context.Context, w http.ResponseWriter, userId uint) {
 		SameSite: http.SameSiteLaxMode,
 		//MaxAge:   300, // 5 minut
 	})
-	logger.DebugCtx(ctx, "Set access token cookie value", token)
 }
 func SetRefreshToken(w http.ResponseWriter, ctx context.Context, token string, maxAge int) {
 	cfg := contexthelper.GetConfig(ctx)
@@ -116,13 +113,12 @@ func SetRefreshToken(w http.ResponseWriter, ctx context.Context, token string, m
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   maxAge, // 5 minut
 	})
-	logger.DebugCtx(ctx, "Set refresh token cookie value", token)
 }
 
 func generateJWT(ctx context.Context, userID uint) (string, error) {
 	cfg := contexthelper.GetConfig(ctx)
 	ttl := time.Minute * time.Duration(int64(cfg.Token.AccessTokenTtlMinutes))
-	logger.DebugCtx(ctx, "minutes:", cfg.Token.AccessTokenTtlMinutes, "ttl:", ttl, "expires:", jwt.NewNumericDate(time.Now().Add(ttl)))
+	//logger.DebugCtx(ctx, "minutes:", cfg.Token.AccessTokenTtlMinutes, "ttl:", ttl, "expires:", jwt.NewNumericDate(time.Now().Add(ttl)))
 	claims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{

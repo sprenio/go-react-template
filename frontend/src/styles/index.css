@@ -1,15 +1,85 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-@import "./theme.base.css";
-@import "./theme.light.css";
-@import "./theme.dark.css";
-@import "./globals.css";
-@import '@/assets/flags/flags.css';
+/* Asset imports */
+@import "@fontsource-variable/geist";
+@import "@/assets/flags/flags.css";
+
+/* User's native theme imports */
+@import "./theme.base.css" layer(theme);
+@import "./theme.light.css" layer(theme);
+@import "./theme.dark.css" layer(theme);
+@import "./globals.css" layer(components);
+
+/* Map dark variant to the project's dataset attribute */
+@custom-variant dark (&:is([data-theme='dark'] *));
+
+@theme {
+    /* Fonts mapping */
+    --font-heading: var(--font-heading);
+    --font-sans: var(--font-body);
+
+    /* Shadcn UI mapping to Application Custom Variables */
+    --color-background: var(--bg);
+    --color-foreground: var(--text);
+    
+    --color-card: var(--surface);
+    --color-card-foreground: var(--text);
+    
+    --color-popover: var(--surface);
+    --color-popover-foreground: var(--text);
+    
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--text-on-primary);
+    
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--text-on-secondary);
+    
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--text-secondary);
+    
+    --color-accent: var(--surface-hover);
+    --color-accent-foreground: var(--text);
+    
+    --color-destructive: var(--error);
+    --color-destructive-foreground: #ffffff;
+    
+    --color-border: var(--border);
+    --color-input: var(--border);
+    --color-ring: var(--primary);
+
+    /* Sidebar Defaults mapped to typical surface */
+    --color-sidebar: var(--surface);
+    --color-sidebar-foreground: var(--text);
+    --color-sidebar-primary: var(--primary);
+    --color-sidebar-primary-foreground: var(--text-on-primary);
+    --color-sidebar-accent: var(--surface-hover);
+    --color-sidebar-accent-foreground: var(--text);
+    --color-sidebar-border: var(--border);
+    --color-sidebar-ring: var(--primary);
+
+    /* Keep original Tailwind base charting colors or map them */
+    --color-chart-1: #3b82f6;
+    --color-chart-2: #10b981;
+    --color-chart-3: #f59e0b;
+    --color-chart-4: #8b5cf6;
+    --color-chart-5: #ec4899;
+
+    /* Radius mapping */
+    --radius-sm: var(--radius-sm);
+    --radius-md: var(--radius-md);
+    --radius-lg: var(--radius-lg);
+    --radius-xl: var(--radius-xl);
+}
 
 @layer base {
-    body {
-        font-family: var(--font-body), serif;
-        background-color: var(--bg);
-        color: var(--text);
-    }
+  body {
+    font-family: var(--font-body), serif;
+    background-color: var(--bg);
+    color: var(--text);
+  }
+  
+  * {
+    @apply border-border outline-ring/50;
+  }
 }

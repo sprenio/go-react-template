@@ -15,13 +15,13 @@ func JWTAuth(next http.Handler) http.Handler {
 		userId, err := cookie.GetUserIdFromJwtToken(r)
 		accessTokenData, ctx := contexthelper.GetAccessTokenData(ctx)
 		if err == nil {
-			logger.InfoCtx(ctx, "Authenticated user ID: %d", userId)
+			logger.InfoCtx(ctx, "Authenticated user", "userId", userId)
 			// dodaj user_id do kontekstu
 			ctx = contexthelper.SetUserId(ctx, userId)
 			accessTokenData.SetCookies = true
 			accessTokenData.UserId = userId
 		} else {
-			logger.ErrorCtx(ctx, "Get User Id from JWT token failed: %v", err)
+			logger.ErrorCtx(ctx, "Get User Id from JWT token failed", "error", err)
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

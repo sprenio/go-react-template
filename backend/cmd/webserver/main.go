@@ -11,7 +11,6 @@ import (
 
 	"backend/config"
 	"backend/internal/contexthelper"
-	"backend/internal/handler"
 	"backend/internal/helper"
 	"backend/internal/router"
 	"backend/pkg/logger"
@@ -20,52 +19,57 @@ import (
 func main() {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		logger.Fatal("Nie można załadować konfiguracji: %v", err)
+		logger.Fatal("Failed to load configuration: %v", err)
 	}
 
 	logger.Init(cfg.LogLevel, contexthelper.GetRequestID)
-	logger.Info("Uruchamianie aplikacji: %s", cfg.AppName)
+	logger.Info("Starting application", "app_name", cfg.AppName)
 
-	// Kontekst z timeoutem na połączenie z DB
+	// Context with timeout for DB connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	db, rabbitConn, err := helper.ConnectServicesWithRetry(ctx, cfg.DB.DSN, cfg.RabbitMQ.URL)
+	svcs, err := helper.ConnectServicesWithRetry(
+		ctx,
+		cfg.DB.DSN,
+		cfg.RabbitMQ.URL,
+		cfg.Redis.URL,
+	)
 	if err != nil {
-		logger.Fatal("Nie udało się połączyć z usługami: %v", err)
+		logger.Fatal("Failed to connect to services", "error", err)
 	}
-	defer rabbitConn.Close()
-	defer db.Close()
+	defer svcs.RabbitConn.Close()
+	defer svcs.DB.Close()
+	defer svcs.RedisClient.Close()
 
-	logger.Info("Wszystkie usługi gotowe, start backendu...")
+	logger.Info("All services ready, starting backend...")
 
-	// Inicjalizacja handlerów i routera
-	h := handler.NewHandler()
+	// Initialize handlers and router
 	webHostPort := fmt.Sprintf("%s:%v", cfg.WebServer.Host, cfg.WebServer.HTTPPort)
 	srv := &http.Server{
 		Addr:    webHostPort,
-		Handler: router.SetupRouter(h, cfg, db, rabbitConn),
+		Handler: router.SetupRouter(cfg, svcs.DB, svcs.RabbitConn, svcs.RedisClient),
 	}
-	
-	// Obsługa sygnałów (graceful shutdown)
+
+	// Signal handling (graceful shutdown)
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		logger.Info("Start serwera: %s", webHostPort)
+		logger.Info("Starting server", "port", webHostPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error("Błąd serwera: %v", err)
+			logger.Error("Server error: %v", err)
 		}
 	}()
 
-	<-stop // czekaj na SIGINT/SIGTERM
-	logger.Info("Zatrzymywanie aplikacji...")
+	<-stop // wait for SIGINT/SIGTERM
+	logger.Info("Stopping application...")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error("Błąd przy zamykaniu serwera: %v", err)
+		logger.Error("Error shutting down server", "error", err)
 	}
 
 	logger.Info("Aplikacja zatrzymana.")

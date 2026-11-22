@@ -1,9 +1,9 @@
-import {PageTitle} from '@/layouts/PageTitle';
+import { PageTitle } from '@/layouts/PageTitle';
 import { useTranslation } from 'react-i18next';
 import ResetPasswordForm from './ResetPasswordForm';
 import { Link } from 'react-router-dom';
 import { useConfig } from '@/providers/ConfigProvider';
-import {NotFound} from '../NotFound';
+import { NotFound } from '../NotFound';
 import { FormFooter, FormHeader } from '@/components/Form';
 import { Card } from '@/components/Card';
 

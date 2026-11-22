@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -14,10 +15,13 @@ import (
 
 type Config struct {
 	AppEnv          string              `mapstructure:"app_env"`
+	CommitSha       string              `mapstructure:"commit_sha" yaml:"commit_sha"`
+	GitTag          string              `mapstructure:"git_tag" yaml:"git_tag"`
 	AppName         string              `mapstructure:"app_name" yaml:"app_name"`
 	LogLevel        string              `mapstructure:"log_level" yaml:"log_level"`
 	DB              DBConfig            `mapstructure:"database" yaml:"database"`
 	RabbitMQ        RabbitMQConfig      `mapstructure:"rabbitmq" yaml:"rabbitmq"`
+	Redis           RedisConfig         `mapstructure:"redis" yaml:"redis"`
 	WebServer       ServerConfig        `mapstructure:"web_server" yaml:"web_server"`
 	Frontend        FrontendConfig      `mapstructure:"frontend" yaml:"frontend"`
 	Register        RegisterConfig      `mapstructure:"register" yaml:"register"`
@@ -26,6 +30,20 @@ type Config struct {
 	Email           EmailConfig         `mapstructure:"email" yaml:"email"`
 	DefaultLanguage string              `mapstructure:"default_language" yaml:"default_language"`
 	Token           TokenConfig         `mapstructure:"token" yaml:"token"`
+	RateLimit       RateLimitConfig     `mapstructure:"rate_limit" yaml:"rate_limit"`
+}
+
+type RateLimitRuleConfig struct {
+	Rate   int64         `mapstructure:"rate" yaml:"rate"`
+	Window time.Duration `mapstructure:"window" yaml:"window"`
+}
+
+type RateLimitConfig struct {
+	Enabled          bool                              `mapstructure:"enabled" yaml:"enabled"`
+	AnonymousGlobal  []RateLimitRuleConfig             `mapstructure:"anonymous_global" yaml:"anonymous_global"`
+	AuthorizedGlobal []RateLimitRuleConfig             `mapstructure:"authorized_global" yaml:"authorized_global"`
+	Endpoints        map[string][]RateLimitRuleConfig `mapstructure:"endpoints" yaml:"endpoints"`
+	CustomLimits     map[string][]RateLimitRuleConfig `mapstructure:"custom_limits" yaml:"custom_limits"`
 }
 
 func (c *Config) IsDevEnv() bool {
@@ -57,6 +75,14 @@ type RabbitMQConfig struct {
 	Port     int    `mapstructure:"port" yaml:"port"`
 	User     string `mapstructure:"user" yaml:"user"`
 	Password string `mapstructure:"password" yaml:"password"`
+	URL      string `mapstructure:"url" yaml:"url"`
+}
+
+type RedisConfig struct {
+	Host     string `mapstructure:"host" yaml:"host"`
+	Port     int    `mapstructure:"port" yaml:"port"`
+	Password string `mapstructure:"password" yaml:"password"`
+	DB       int    `mapstructure:"db" yaml:"db"`
 	URL      string `mapstructure:"url" yaml:"url"`
 }
 
@@ -142,6 +168,9 @@ func loadConfig() (*Config, error) {
 		// "amqp://guest:guest@localhost:5672/"
 		cfg.RabbitMQ.URL = fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.RabbitMQ.User, cfg.RabbitMQ.Password, cfg.RabbitMQ.Host, cfg.RabbitMQ.Port)
 	}
+	if cfg.Redis.URL == "" {
+		cfg.Redis.URL = fmt.Sprintf("redis://%s:%d", cfg.Redis.Host, cfg.Redis.Port)
+	}
 	return &cfg, nil
 }
 func readYamlToMap(data []byte) map[string]interface{} {
@@ -161,18 +190,30 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("rabbitmq.password", "guest")
 	v.SetDefault("rabbitmq.port", 5672)
 	v.SetDefault("rabbitmq.host", "rabbitmq")
+	v.SetDefault("redis.host", "redis")
+	v.SetDefault("redis.port", 6379)
+	v.SetDefault("redis.password", "")
+	v.SetDefault("redis.db", 0)
+	v.SetDefault("rate_limit.enabled", true)
 }
 func setConfigByEnv(cfg *Config) {
 	setGeneralConfigByEnv(cfg)
 	setWebServerConfigByEnv(cfg)
 	setDatabaseConfigByEnv(cfg)
 	setRabbitMQConfigByEnv(cfg)
+	setRedisConfigByEnv(cfg)
 	setFrontendConfigByEnv(cfg)
 	setResetPasswordConfigByEnv(cfg)
 	setRegisterConfigByEnv(cfg)
 	setEmailConfigByEnv(cfg)
 	setEmailChangeConfigByEnv(cfg)
 	setTokenConfigByEnv(cfg)
+	setGitDataConfigByEnv(cfg)
+}
+
+func setGitDataConfigByEnv(cfg *Config) {
+	cfg.CommitSha = os.Getenv("GIT_COMMIT")
+	cfg.GitTag = os.Getenv("GIT_TAG")
 }
 
 func setEmailConfigByEnv(cfg *Config) {
@@ -288,6 +329,30 @@ func setRabbitMQConfigByEnv(cfg *Config) {
 	}
 	if rabbitMQPass := os.Getenv("RABBITMQ_PASS"); rabbitMQPass != "" {
 		cfg.RabbitMQ.Password = rabbitMQPass
+	}
+}
+func setRedisConfigByEnv(cfg *Config) {
+	if redisHost := os.Getenv("REDIS_HOST"); redisHost != "" {
+		cfg.Redis.Host = redisHost
+	}
+	if redisPort := os.Getenv("REDIS_PORT"); redisPort != "" {
+		intPort, err := strconv.Atoi(redisPort)
+		if err != nil {
+			log.Printf("Invalid REDIS_PORT value: %v; setting to default", err)
+			intPort = 6379 // default Redis port
+		}
+		cfg.Redis.Port = intPort
+	}
+	if redisPassword := os.Getenv("REDIS_PASSWORD"); redisPassword != "" {
+		cfg.Redis.Password = redisPassword
+	}
+	if redisDB := os.Getenv("REDIS_DB"); redisDB != "" {
+		intDB, err := strconv.Atoi(redisDB)
+		if err != nil {
+			log.Printf("Invalid REDIS_DB value: %v; setting to default", err)
+			intDB = 0 // default Redis DB
+		}
+		cfg.Redis.DB = intDB
 	}
 }
 func setFrontendConfigByEnv(cfg *Config) {

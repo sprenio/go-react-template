@@ -2,16 +2,15 @@ import { FormWrapper } from '@/components/Form';
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 
-
 type EmailChangeFormProps = {
-    email: string
-    onSubmit: (email: string) => void
-}
-export default function EmailChangeForm({ email, onSubmit }:EmailChangeFormProps) {
+  email: string;
+  onSubmit: (email: string) => void;
+};
+export default function EmailChangeForm({ email, onSubmit }: EmailChangeFormProps) {
   const { t } = useTranslation();
   const [newEmail, setNewEmail] = useState('');
 
-  const handleEmailChange = (e:React.FormEvent<HTMLFormElement>) => {
+  const handleEmailChange = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (onSubmit) {
       onSubmit(newEmail);
