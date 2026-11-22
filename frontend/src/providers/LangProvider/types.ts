@@ -1,4 +1,5 @@
 export type LangContextType = {
-    lang: string
-    changeLang: (newLang: string) => void
-}
+  lang: string;
+  locale: string;
+  changeLang: (newLang: string) => void;
+};

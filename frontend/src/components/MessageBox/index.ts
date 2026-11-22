@@ -1,1 +1,1 @@
-export {MessageBox} from './MessageBox';
+export { MessageBox } from './MessageBox';

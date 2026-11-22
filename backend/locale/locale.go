@@ -1,10 +1,9 @@
 package locale
 
 import (
+	"backend/pkg/apperror"
 	"embed"
 	"encoding/json"
-
-	"github.com/pkg/errors"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
@@ -32,7 +31,7 @@ func loadBundleMessageFile(bundle *i18n.Bundle, lang string) error {
 	}
 	_, err = bundle.ParseMessageFileBytes(data, lang+".json")
 	if err != nil {
-		return errors.Wrapf(err, "load message file %s", lang+".json")
+		return apperror.Wrap(err, "load message file", "filename", lang+".json")
 	}
 	return nil
 }

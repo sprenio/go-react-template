@@ -1,2 +1,2 @@
 export { useMessage } from './Context';
-export { MessageProvider}  from './Provider'
+export { MessageProvider } from './Provider';

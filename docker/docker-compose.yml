@@ -1,0 +1,199 @@
+name: "gr-template"
+
+services:
+  db:
+    image: mariadb:13.0.2-ubi10
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_DATABASE:-myapp}
+      MYSQL_USER: ${DB_USER:-myapp}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-myapp}
+    working_dir: /var/lib/mysql/
+    volumes:
+      - ${DB_DATA_DIR:-../storage/db/data}:/var/lib/mysql
+      - ${DB_LOGS_DIR:-../storage/db/logs}:/var/log/mysql
+      - ./services/db/initdb.d:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "mariadb -h localhost -u $${MYSQL_USER} -p$${MYSQL_PASSWORD} -e \"USE $${MYSQL_DATABASE};\"" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    networks:
+      gr-internal: {}
+      db-admin:
+        aliases:
+          - gr-db
+
+  db-migrator:
+    build:
+      context: ..
+      dockerfile: ./docker/services/db-migrator/Dockerfile
+    environment:
+      MYSQL_HOST: db
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_DATABASE:-myapp}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../db_migrations:/migrator/migrations:ro
+    networks:
+      - gr-internal
+
+  webserver:
+    build:
+      context: ..
+      dockerfile: ./docker/services/backend/Dockerfile.dev
+      args:
+        TARGET: webserver
+    env_file:
+      - ../.env
+    environment:
+      APP_NAME: ${APP_NAME:-MyWebApp}
+      DB_HOST: db
+      DB_USER: ${DB_USER:-myapp}
+      DB_PASS: ${DB_PASSWORD:-myapp}
+      DB_NAME: ${DB_DATABASE:-myapp}
+      WEBSERVER_PORT: ${WEBSERVER_PORT:-8080}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD:-guest}
+      TARGET: ${WEBSERVER_TARGET:-webserver}
+    volumes:
+      - ./services/backend/entrypoint.d/webservice:/entrypoint.d:ro
+      - ../backend:/app
+      - /app/bin
+      - /app/tmp
+    command: ["task", "watch"]
+    depends_on:
+      db-migrator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      gr-internal: {}
+      reverse-proxy:
+        aliases:
+          - gr-webserver
+
+  consumer:
+    build:
+      context: ..
+      dockerfile: ./docker/services/backend/Dockerfile.dev
+      args:
+        TARGET: consumer
+    env_file:
+      - ../.env
+    environment:
+      APP_NAME: ${APP_NAME:-MyWebApp}
+      DB_HOST: db
+      DB_USER: ${DB_USER:-myapp}
+      DB_PASS: ${DB_PASSWORD:-myapp}
+      DB_NAME: ${DB_DATABASE:-myapp}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD:-guest}
+      TARGET: ${CONSUMER_TARGET:-consumer}
+    volumes:
+      - ../backend:/app
+      - /app/bin
+      - /app/tmp
+    command: ["task", "watch"]
+    depends_on:
+      db-migrator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - gr-internal
+
+  cron:
+    build:
+      context: ..
+      dockerfile: ./docker/services/backend/Dockerfile.dev
+      args:
+        TARGET: cron
+    env_file:
+      - ../.env
+    environment:
+      APP_NAME: ${APP_NAME:-MyWebApp}
+      DB_HOST: db
+      DB_USER: ${DB_USER:-myapp}
+      DB_PASS: ${DB_PASSWORD:-myapp}
+      DB_NAME: ${DB_DATABASE:-myapp}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD:-guest}
+      TARGET: ${CRON_TARGET:-cron}
+    volumes:
+      - ../backend:/app
+      - /app/bin
+      - /app/tmp
+    command: ["task", "watch"]
+    depends_on:
+      db-migrator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - gr-internal
+
+  frontend:
+    image: nginx:1.29.0
+    env_file:
+      - ../.env
+    restart: unless-stopped
+    networks:
+      gr-internal: {}
+      reverse-proxy:
+        aliases:
+          - gr-nginx
+    working_dir: /etc/nginx
+    volumes:
+      - ${NGINX_CONF_DIR:-./services/nginx}/default_server.conf:/etc/nginx/conf.d/default.conf
+      - ${NGINX_LOGS_DIR:-../storage/nginx/logs}:/var/log/nginx
+
+  rabbitmq:
+    image: rabbitmq:4.1.2-management
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    working_dir: /var/lib/rabbitmq
+    volumes:
+      - ${RABBITMQ_DATA_DIR:-../storage/rabbitmq/data}:/var/lib/rabbitmq
+      - ${RABBITMQ_LOGS_DIR:-../storage/rabbitmq/logs}:/var/log/rabbitmq
+    networks:
+      gr-internal: {}
+      reverse-proxy:
+        aliases:
+          - gr-rabbitmq
+
+  redis:
+    image: redis:8.8-alpine
+    restart: unless-stopped
+    volumes:
+      - ${REDIS_DATA_DIR:-../storage/redis/data}:/data
+    networks:
+      - gr-internal
+
+networks:
+  # Global networks
+  reverse-proxy:
+    external: true
+  db-admin:
+    external: true
+
+  # Private network (created automatically only for this project):
+  gr-internal:
+    driver: bridge

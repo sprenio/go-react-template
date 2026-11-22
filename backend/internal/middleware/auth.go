@@ -17,7 +17,6 @@ func AuthOnly(next http.Handler) http.Handler {
 			response.UnauthorizedErrorResponse(w, "Access token is missing or malformed")
 			return
 		}
-		logger.DebugCtx(ctx, "The required UserId value is present in context : %d", userId)
 		next.ServeHTTP(w, r)
 	})
 }

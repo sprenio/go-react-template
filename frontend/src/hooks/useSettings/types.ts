@@ -1,3 +1,3 @@
 export type ChangeEmailData = {
-    email: string
-}
+  email: string;
+};

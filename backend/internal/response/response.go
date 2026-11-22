@@ -3,13 +3,17 @@ package response
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"backend/internal/apicodes"
+	"backend/internal/apierrors"
 	"backend/internal/contexthelper"
 	"backend/internal/cookie"
-	"backend/internal/repository"
+	"backend/internal/helper"
+	sessionRepository "backend/internal/session/repository"
 	"backend/pkg/logger"
 )
 
@@ -35,6 +39,13 @@ func SuccessResponse(w http.ResponseWriter, ctx context.Context) {
 	SuccessCodeResponse(w, ctx, apicodes.API_General_Success)
 }
 
+func SuccessNoContentResponse(w http.ResponseWriter, ctx context.Context) {
+	setUserAccessCookies(ctx, w)
+	h := w.Header()
+	h.Del("Content-Length")
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func SuccessCodeResponse(w http.ResponseWriter, ctx context.Context, code int) {
 	response := &successResponse{
 		msgResponse: getMsgResponse(code),
@@ -55,6 +66,13 @@ func SuccessDataResponse(w http.ResponseWriter, ctx context.Context, data any) {
 	}
 	apiSuccessResponse(w, ctx, response)
 }
+func SuccessCreatedDataResponse(w http.ResponseWriter, ctx context.Context, data any) {
+	response := &successResponse{
+		msgResponse: getMsgResponse(apicodes.API_General_Success),
+		Data:        data,
+	}
+	apiCreatedSuccessResponse(w, ctx, response)
+}
 func SuccessDataCodeResponse(w http.ResponseWriter, ctx context.Context, data any, code int) {
 	response := &successResponse{
 		msgResponse: getMsgResponse(code),
@@ -68,31 +86,81 @@ func InvalidJsonErrorResponse(w http.ResponseWriter) {
 	apiErrorResponse(w, http.StatusBadRequest, apicodes.API_General_Invalid_JSON)
 }
 
-func InvalidInputValueErrorResponse(w http.ResponseWriter, field string, desc string) {
+func PayloadTooLargeErrorResponse(w http.ResponseWriter) {
+	apiErrorResponse(w, http.StatusRequestEntityTooLarge, apicodes.API_General_Payload_Too_Large)
+}
+
+func InvalidInputValueErrorResponse(w http.ResponseWriter, err *apierrors.AppInvalidInputError) {
 	response := invalidInputValueResponse{
 		errorResponse: errorResponse{
 			msgResponse: getMsgResponse(apicodes.API_General_Invalid_Input_Value),
-			Description: desc,
+			Description: err.Description,
 		},
-		InvalidField: field,
+		InvalidField: err.Field,
 	}
 	apiResponse(w, http.StatusBadRequest, response)
+}
+
+func InvalidInputResponse(w http.ResponseWriter, err error) {
+	if errors.Is(err, helper.ErrPayloadTooLarge) {
+		PayloadTooLargeErrorResponse(w)
+		return
+	}
+	if errors.Is(err, helper.ErrInvalidJSON) {
+		InvalidJsonErrorResponse(w)
+		return
+	}
+	if apierrors.IsAppInvalidInputError(err) {
+		invalidInputErr := err.(*apierrors.AppInvalidInputError)
+		InvalidInputValueErrorResponse(w, invalidInputErr)
+		return
+	}
+	BadRequestErrorResponse(w)
 }
 
 func UnauthorizedErrorResponse(w http.ResponseWriter, description string) {
 	apiErrorWithDescriptionResponse(w, http.StatusUnauthorized, http.StatusUnauthorized, description)
 }
 
+func TooManyRequestsErrorResponse(w http.ResponseWriter, retryAfterSeconds int) {
+	if retryAfterSeconds > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(retryAfterSeconds))
+	}
+	apiErrorResponse(w, http.StatusTooManyRequests, apicodes.API_General_Too_Many_Requests)
+}
+
+func ConflictErrorResponse(w http.ResponseWriter, code int) {
+	apiErrorResponse(w, http.StatusConflict, code)
+}
+
+func BadRequestWithCodeErrorResponse(w http.ResponseWriter, code int) {
+	apiErrorResponse(w, http.StatusBadRequest, code)
+}
+
+func ErrorCodeResponse(w http.ResponseWriter, status int, code int) {
+	apiErrorResponse(w, status, code)
+}
+
 // private
 func apiResponse(w http.ResponseWriter, status int, response any) {
 	setJsonResponseHeaders(w, status)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		logger.ErrorCtx(context.Background(), "JSON encode error", "error", err)
+	}
 }
 
 func apiSuccessResponse(w http.ResponseWriter, ctx context.Context, response any) {
-	setUserAccessCookies(ctx, w)
-	apiResponse(w, http.StatusOK, response)
+	apiResponseWithCookies(w, ctx, http.StatusOK, response)
 }
+func apiCreatedSuccessResponse(w http.ResponseWriter, ctx context.Context, response any) {
+	apiResponseWithCookies(w, ctx, http.StatusCreated, response)
+}
+
+func apiResponseWithCookies(w http.ResponseWriter, ctx context.Context, status int, response any) {
+	setUserAccessCookies(ctx, w)
+	apiResponse(w, status, response)
+}
+
 func apiErrorResponse(w http.ResponseWriter, status int, code int) {
 	response := getErrorResponseByCode(code, "")
 	apiResponse(w, status, response)
@@ -125,7 +193,6 @@ func getMsgResponse(code int) msgResponse {
 
 func setUserAccessCookies(ctx context.Context, w http.ResponseWriter) {
 	accessTokenData, ctx := contexthelper.GetAccessTokenData(ctx)
-	logger.DebugCtx(ctx, "AccessTokenData: %v", accessTokenData)
 	if !accessTokenData.SetCookies {
 		return
 	}
@@ -134,7 +201,7 @@ func setUserAccessCookies(ctx context.Context, w http.ResponseWriter) {
 	}
 	if accessTokenData.RefreshToken != "" {
 		db := contexthelper.GetDb(ctx)
-		sessionRepo := repository.NewUserSessionsRepository(db)
+		sessionRepo := sessionRepository.NewRepository(db)
 
 		// Calculate TTL for refresh token
 		cfg := contexthelper.GetConfig(ctx)
@@ -145,7 +212,7 @@ func setUserAccessCookies(ctx context.Context, w http.ResponseWriter) {
 		// Refresh token in database
 		err := sessionRepo.RefreshToken(ctx, accessTokenData.UserId, accessTokenData.RefreshToken, expiresAt)
 		if err != nil {
-			logger.ErrorCtx(ctx, "Refresh token failed: %v", err)
+			logger.ErrorCtx(ctx, "Refresh token failed", "error", err)
 			cookie.DeleteRefreshToken(ctx, w)
 			return
 		}

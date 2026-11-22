@@ -7,6 +7,7 @@ import prettierConfig from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default tseslint.config(
+  { ignores: ['dist'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettierConfig,
@@ -39,19 +40,13 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'warn',
 
       /* Vite / Fast Refresh */
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
 
       /* TypeScript */
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
 
       /* Ogólne */
       'no-console': 'warn',
     },
-  }
+  },
 );

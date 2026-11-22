@@ -10,9 +10,9 @@ import (
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := uuidstr.GetUniqBase36(32)
-		// dodaj do kontekstu
+		// add to context
 		ctx := contexthelper.SetRequestID(r.Context(), requestID)
-		// opcjonalnie: dodaj do nagłówków odpowiedzi
+		// optionally: add to response headers
 		w.Header().Set("X-Request-ID", requestID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

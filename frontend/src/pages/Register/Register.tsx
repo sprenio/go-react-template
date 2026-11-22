@@ -1,9 +1,9 @@
-import {PageTitle} from '@/layouts/PageTitle';
+import { PageTitle } from '@/layouts/PageTitle';
 import RegisterForm from './RegisterForm';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useConfig } from '@/providers/ConfigProvider';
-import {NotFound} from '../NotFound';
+import { NotFound } from '../NotFound';
 import { Card } from '@/components/Card';
 import { FormFooter, FormHeader } from '@/components/Form';
 

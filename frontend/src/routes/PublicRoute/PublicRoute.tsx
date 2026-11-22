@@ -4,5 +4,5 @@ import { Navigate } from 'react-router-dom';
 
 export function PublicRoute() {
   const { appUser } = useAuth();
-  return appUser ?  <Navigate to="/dashboard" replace /> : <PublicLayout />;
+  return appUser ? <Navigate to="/dashboard" replace /> : <PublicLayout />;
 }

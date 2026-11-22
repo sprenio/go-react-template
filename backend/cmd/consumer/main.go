@@ -4,11 +4,11 @@ import (
 	"backend/config"
 	"backend/internal/contexthelper"
 	"backend/internal/helper"
-	"backend/internal/queue"
+	queueConsumer "backend/internal/queue/consumer"
 	"backend/pkg/logger"
 	"context"
-	"log"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -16,52 +16,70 @@ import (
 func main() {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		logger.Fatal("Nie można załadować konfiguracji: %v", err)
+		logger.Fatal("Failed to load configuration: %v", err)
 	}
 
 	logger.Init(cfg.LogLevel, contexthelper.GetRequestID)
 
-	// Kontekst z timeoutem na połączenie z DB
+	// Context with timeout for DB connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	db, rabbitConn, err := helper.ConnectServicesWithRetry(ctx, cfg.DB.DSN, cfg.RabbitMQ.URL)
+	svcs, err := helper.ConnectServicesWithRetry(
+		ctx,
+		cfg.DB.DSN,
+		cfg.RabbitMQ.URL,
+		cfg.Redis.URL,
+	)
 	if err != nil {
-		logger.Fatal("Nie udało się połączyć z usługami: %v", err)
+		logger.Fatal("Failed to connect to services: %v", err)
 	}
-	defer rabbitConn.Close()
-	defer db.Close()
+	defer svcs.RabbitConn.Close()
+	defer svcs.DB.Close()
+	defer svcs.RedisClient.Close()
+	logger.Info("All services ready, starting backend...")
 
-	logger.Info("Wszystkie usługi gotowe, start backendu...")
-
-	// Główny kontekst aplikacji – będzie anulowany na SIGINT/SIGTERM
+	// Main application context – will be cancelled on SIGINT/SIGTERM
 	appCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	appCtx = contexthelper.SetServices(appCtx, db, rabbitConn)
+	appCtx = contexthelper.SetServices(appCtx, svcs.DB, svcs.RabbitConn, svcs.RedisClient)
 	appCtx = contexthelper.SetConfig(appCtx, cfg)
 	appCtx = contexthelper.SetRequestID(appCtx, "consumer")
 
-	logger.Info("🚀 Starting consumers...")
-	c := queue.NewConsumer()
+	logger.InfoCtx(appCtx, "🚀 Starting consumers...")
 
-	// Warto dodać, żeby consumer dostał kontekst (zatrzyma się na cancel)
-	go func() {
-		if err := c.StartEmailConsumer(appCtx); err != nil {
-			log.Printf("Email consumer stopped with error: %v", err)
-		}
-	}()
-	go func() {
-		if err := c.StartReportConsumer(appCtx); err != nil {
-			log.Printf("Report consumer stopped with error: %v", err)
-		}
-	}()
+	c := queueConsumer.NewConsumer(appCtx)
 
-	// Czekaj na sygnał zakończenia
+	var wg sync.WaitGroup
+
+	startConsumer := func(name string, run func(context.Context) error) {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			if err := run(appCtx); err != nil {
+				logger.ErrorCtx(appCtx, "Consumer stopped with error", "consumer", name, "error", err)
+
+				// Error in one consumer causes the others to stop.
+				stop()
+			}
+
+			logger.InfoCtx(appCtx, "Consumer stopped", "consumer", name)
+		}()
+	}
+
+	startConsumer("email", c.StartEmailConsumer)
+	startConsumer("register", c.StartRegisterConsumer)
+	startConsumer("reset-password", c.StartResetPasswordConsumer)
+
+	// Wait for SIGTERM, SIGINT, or an error from one of the consumers.
 	<-appCtx.Done()
-	logger.Info("⏹ Zatrzymywanie consumerów...")
 
-	// jeśli masz c.Stop() → można tu wywołać
-	// c.Stop()
+	logger.InfoCtx(appCtx, "⏹ Stopping consumers...")
 
-	logger.Info("✅ Consumers zatrzymani")
+	// Wait for all goroutines to finish.
+	wg.Wait()
+
+	logger.InfoCtx(appCtx, "✅ All consumers stopped")
 }

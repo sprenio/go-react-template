@@ -1,6 +1,6 @@
 export type RegisterData = {
-    username: string,
-    email: string,
-    password: string,
-    language: string
-}
+  username: string;
+  email: string;
+  password: string;
+  language: string;
+};

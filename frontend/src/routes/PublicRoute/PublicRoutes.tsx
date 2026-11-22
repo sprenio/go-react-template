@@ -5,6 +5,7 @@ import { Register } from '@/pages/Register';
 import { ChangePassword } from '@/pages/ChangePassword';
 import { ResetPassword } from '@/pages/ResetPassword';
 import { Confirm } from '@/pages/Confirm';
+import { NotFound } from '@/pages/NotFound';
 
 export function getPublicRoutes() {
   return (
@@ -15,6 +16,7 @@ export function getPublicRoutes() {
       <Route path="reset-password" element={<ResetPassword />} />
       <Route path="confirm/:hash" element={<Confirm />} />
       <Route index element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Route>
   );
 }

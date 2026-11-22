@@ -1,0 +1,18 @@
+{
+  "page_title": "Увійти",
+  "header": "Вхід до системи",
+  "lbl_email": "Електронна пошта",
+  "ph_email": "Адреса електронної пошти",
+  "lbl_password": "Пароль",
+  "ph_password": "Пароль",
+  "submit": "Увійти",
+  "success": "Успішний вхід",
+  "invalid_credentials": "Невірний логін або пароль",
+  "account_locked": "Обліковий запис заблоковано",
+  "generic_error": "Помилка входу",
+  "no_account": "Ще немає облікового запису?",
+  "register": "Зареєструватися",
+  "forgot_password": "Забули пароль?",
+  "loader": "Вхід...",
+  "remember_me": "Запам’ятати мене"
+}

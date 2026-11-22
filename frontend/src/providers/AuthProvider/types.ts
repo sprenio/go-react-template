@@ -1,12 +1,12 @@
-import type {UserType} from '@/types';
-
+import type { UserType } from '@/domain';
 
 export type MeResponse = {
-    user: UserType
-}
+  user: UserType;
+};
 export type AuthContextType = {
-    setLoginUser: (user: UserType) => void
-    logout: (code:string) => void
-    appUser: UserType|null
-    meInProgress: boolean
-}
+  setLoginUser: (user: UserType) => void;
+  logout: (code: string) => void;
+  fetchMe: () => Promise<void>;
+  appUser: UserType | null;
+  meInProgress: boolean;
+};

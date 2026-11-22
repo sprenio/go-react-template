@@ -1,4 +1,5 @@
 package database
+
 import (
 	"context"
 	"database/sql"
@@ -6,6 +7,7 @@ import (
 	"math"
 	"time"
 
+	"backend/pkg/apperror"
 	"backend/pkg/logger"
 )
 
@@ -26,11 +28,11 @@ func ConnectWithRetry(ctx context.Context, db *sql.DB) error {
 		attempt++
 		// backoff: min(2^attempt, 30) sekund
 		backoff := time.Duration(math.Min(math.Pow(2, float64(attempt)), maxDBIntervalSeconds)) * time.Second
-		logger.Warn("Błąd połączenia z bazą (próba %d): %v. Ponawiam za %v", attempt, err, backoff)
+		logger.WarnCtx(ctx, fmt.Sprintf("Błąd połączenia z bazą (próba %d): %v. Ponawiam za %v", attempt, err, backoff))
 
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("timeout podczas łączenia z bazą: %w", err)
+			return apperror.Wrap(err, "timeout podczas łączenia z bazą", "attempt", attempt)
 		case <-time.After(backoff):
 		}
 	}
