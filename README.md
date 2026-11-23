@@ -50,6 +50,7 @@ Go + React + TypeScript + Tailwind CSS full‑stack boilerplate, ready for local
   - **RabbitMQ credentials**: `RABBITMQ_USER`, `RABBITMQ_PASSWORD`.
   - **Redis settings**: `REDIS_HOST`, `REDIS_PORT`.
   - **Vite dev port**: `VITE_PORT` (defaults to `5173`).
+- **GitHub Actions (Release)**: configure the `APP_NAME` repository variable in GitHub under **Settings → Secrets and variables → Actions → Variables** (required by the release workflow; not read from `.env`).
 - Nginx configuration: copy `docker/services/nginx/default_server.conf.sample` to `docker/services/nginx/default_server.conf` (if missing, `docker-control.sh` will auto-create it for you on startup). This file is ignored by git so you can customize ports and local routing without dirtying your git tree.
 - Backend-specific configuration is in `backend/config/config.yaml` and `backend/config/config_dev.yaml` and can be overridden with environment variables (see `backend/config/config.go`).
 
@@ -167,3 +168,5 @@ cd docker
 ```
 
 The GitHub Actions workflow (`.github/workflows/release.yml`) builds and publishes the Docker images (`webserver`, `consumer`, `cron`, `frontend`, `db-migrator`) to GitHub Container Registry (GHCR).
+
+Before running a release in a new repository, set the `APP_NAME` repository variable in GitHub: **Settings → Secrets and variables → Actions**, tab **Variables**.
