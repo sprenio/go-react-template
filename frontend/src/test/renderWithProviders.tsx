@@ -1,14 +1,14 @@
-import {render} from '@testing-library/react';
-import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
-import {AuthContext} from '@/providers/AuthProvider';
-import {ConfigContext} from '@/providers/ConfigProvider';
-import {LoaderProvider} from '@/providers/LoaderProvider';
-import {LangProvider} from '@/providers/LangProvider';
-import {MessageProvider} from '@/providers/MessageProvider';
-import {AppThemeProvider} from '@/providers/AppThemeProvider';
-import {MemoryRouter} from 'react-router-dom';
+import { render } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthContext } from '@/providers/AuthProvider';
+import { ConfigContext } from '@/providers/ConfigProvider';
+import { LoaderProvider } from '@/providers/LoaderProvider';
+import { LangProvider } from '@/providers/LangProvider';
+import { MessageProvider } from '@/providers/MessageProvider';
+import { AppThemeProvider } from '@/providers/AppThemeProvider';
+import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
-import type {JSX} from 'react';
+import type { JSX } from 'react';
 import type { AuthContextType } from '@/providers/AuthProvider';
 
 type RenderOptions = {
@@ -24,32 +24,34 @@ export function renderWithProviders(
     {
         route = '/',
         auth = {},
-        featureFlags = {flags: {register: true, reset_password: true}},
+        featureFlags = { flags: { register: true, reset_password: true } },
     }: RenderOptions = {}
 ) {
     const queryClient = new QueryClient();
 
     // Mock ConfigProvider with the provided feature flags
-    const MockConfigProvider = ({children}: { children: React.ReactNode }) => {
+    const MockConfigProvider = ({ children }: { children: React.ReactNode }) => {
         const mockConfig = {
-            Features: featureFlags.flags || {register: true, reset_password: true},
+            Features: featureFlags.flags || { register: true, reset_password: true },
             AppName: 'Test App',
             Languages: [],
             DefaultLanguage: 'pl'
         };
         return (
-            <ConfigContext.Provider value={{config: mockConfig, loading: false, showLanguages: true}}>
+            <ConfigContext.Provider value={{ config: mockConfig, loading: false, showLanguages: true }}>
                 {children}
             </ConfigContext.Provider>
         );
     };
 
+    const { fetchMe, ...restAuth } = auth;
     const authValue: AuthContextType = {
         setLoginUser: vi.fn(),
         logout: vi.fn(),
+        fetchMe: fetchMe ?? vi.fn().mockResolvedValue(undefined),
         appUser: null,
         meInProgress: false,
-        ...auth, // override
+        ...restAuth, // override
     };
     return render(
         <MemoryRouter initialEntries={[route]}>
